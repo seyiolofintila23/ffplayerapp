@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFplayerapp – Advisor Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #051B38; --navy-mid: #0a2d55; --blue: #1155CC; --blue-bright: #1a6dff;
+    --white: #FFFFFF; --gold: #F0B429; --red: #E53E3E; --green: #38A169;
+    --glass: rgba(255,255,255,0.06); --glass-border: rgba(255,255,255,0.12); --text-dim: rgba(255,255,255,0.5);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--navy); color:var(--white); min-height:100vh; }
+
+  /* ── LOGIN ── */
+  #login-page { min-height:100vh; display:flex; align-items:center; justify-content:center; background: radial-gradient(ellipse 80% 60% at 70% 20%, rgba(17,85,204,0.35) 0%, transparent 60%), var(--navy); }
+  .login-card { width:100%; max-width:420px; margin:2rem; background:rgba(5,27,56,0.9); border:1px solid var(--glass-border); border-radius:20px; padding:3rem; backdrop-filter:blur(20px); box-shadow:0 40px 80px rgba(0,0,0,0.5); }
+  .login-logo { text-align:center; margin-bottom:2rem; }
+  .logo-icon { display:inline-flex; width:52px; height:52px; background:linear-gradient(135deg,var(--blue),var(--blue-bright)); border-radius:14px; align-items:center; justify-content:center; font-size:24px; margin-bottom:1rem; box-shadow:0 8px 24px rgba(17,85,204,0.5); }
+  .logo-title { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:2px; display:block; }
+  .logo-sub { font-size:0.75rem; color:var(--text-dim); letter-spacing:3px; text-transform:uppercase; }
+  .form-group { margin-bottom:1.25rem; }
+  .form-label { display:block; font-size:0.72rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.5rem; }
+  .form-input { width:100%; padding:0.85rem 1rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:0.95rem; outline:none; transition:all 0.2s; }
+  .form-input:focus { border-color:var(--blue-bright); background:rgba(26,109,255,0.08); box-shadow:0 0 0 3px rgba(26,109,255,0.15); }
+  .form-input::placeholder { color:rgba(255,255,255,0.25); }
+  .btn-primary { width:100%; padding:1rem; background:linear-gradient(135deg,var(--blue),var(--blue-bright)); border:none; border-radius:10px; color:white; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s; box-shadow:0 8px 24px rgba(17,85,204,0.4); }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(17,85,204,0.6); }
+  .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+  .error-msg { background:rgba(229,62,62,0.15); border:1px solid rgba(229,62,62,0.3); border-radius:8px; padding:0.75rem 1rem; font-size:0.85rem; color:#FC8181; margin-top:1rem; text-align:center; display:none; }
+
+  /* ── LAYOUT ── */
+  #admin-page { display:none; min-height:100vh; }
+  .sidebar { position:fixed; left:0; top:0; bottom:0; width:240px; background:rgba(5,27,56,0.97); border-right:1px solid var(--glass-border); z-index:100; display:flex; flex-direction:column; padding:1.5rem 0; }
+  .sidebar-brand { padding:0 1.5rem 1.5rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; gap:10px; }
+  .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--blue),var(--blue-bright)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .brand-name { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:2px; }
+  .brand-tag { font-size:0.65rem; color:var(--gold); letter-spacing:2px; text-transform:uppercase; display:block; margin-top:-2px; }
+  .sidebar-nav { flex:1; padding:1.5rem 0.75rem; display:flex; flex-direction:column; gap:4px; }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:0.7rem 0.9rem; border-radius:10px; cursor:pointer; transition:all 0.2s; font-size:0.88rem; font-weight:500; color:var(--text-dim); border:1px solid transparent; }
+  .nav-item:hover { background:rgba(255,255,255,0.05); color:var(--white); }
+  .nav-item.active { background:rgba(17,85,204,0.2); border-color:rgba(17,85,204,0.4); color:var(--white); }
+  .nav-icon { font-size:1.1rem; width:20px; text-align:center; }
+  .sidebar-footer { padding:1.25rem 1.5rem; border-top:1px solid var(--glass-border); font-size:0.8rem; color:var(--text-dim); }
+  .main { margin-left:240px; min-height:100vh; }
+  .topbar { padding:1.25rem 2rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--glass-border); background:rgba(5,27,56,0.6); position:sticky; top:0; z-index:50; backdrop-filter:blur(10px); }
+  .topbar-title { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:2px; }
+  .logout-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:var(--text-dim); padding:0.4rem 0.9rem; font-size:0.8rem; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+  .logout-btn:hover { background:rgba(229,62,62,0.15); border-color:rgba(229,62,62,0.3); color:#FC8181; }
+  .page { padding:2rem; display:none; }
+  .page.active { display:block; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── STATS ── */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:1.25rem; position:relative; overflow:hidden; }
+  .stat-card-accent { position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
+  .accent-blue { background:linear-gradient(90deg,var(--blue),var(--blue-bright)); }
+  .accent-green { background:linear-gradient(90deg,#38A169,#68D391); }
+  .accent-gold { background:linear-gradient(90deg,#D69E2E,var(--gold)); }
+  .stat-icon { font-size:1.3rem; margin-bottom:0.5rem; display:block; }
+  .stat-value { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:1px; line-height:1; }
+  .stat-label { font-size:0.72rem; color:var(--text-dim); margin-top:4px; text-transform:uppercase; letter-spacing:0.8px; }
+
+  /* ── SECTION ── */
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; }
+
+  /* ── BUTTONS ── */
+  .btn { padding:0.6rem 1.2rem; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.85rem; cursor:pointer; transition:all 0.2s; border:none; }
+  .btn-blue { background:linear-gradient(135deg,var(--blue),var(--blue-bright)); color:white; box-shadow:0 4px 16px rgba(17,85,204,0.3); }
+  .btn-blue:hover { box-shadow:0 8px 24px rgba(17,85,204,0.5); transform:translateY(-1px); }
+  .btn-ghost { background:var(--glass); border:1px solid var(--glass-border); color:var(--text-dim); }
+  .btn-ghost:hover { color:var(--white); border-color:rgba(255,255,255,0.25); }
+  .btn-danger { background:rgba(229,62,62,0.15); border:1px solid rgba(229,62,62,0.3); color:#FC8181; }
+  .btn-danger:hover { background:rgba(229,62,62,0.3); }
+  .btn-sm { padding:4px 10px; font-size:0.75rem; border-radius:6px; }
+  .btn-gold { background:rgba(240,180,41,0.2); border:1px solid rgba(240,180,41,0.4); color:var(--gold); }
+  .btn-gold:hover { background:rgba(240,180,41,0.35); }
+
+  /* ── PLAYERS GRID ── */
+  .players-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+  .player-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:1.25rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:1rem; }
+  .player-card:hover { border-color:rgba(17,85,204,0.5); background:rgba(17,85,204,0.1); transform:translateY(-2px); }
+  .player-avatar { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--navy-mid)); border:2px solid rgba(17,85,204,0.5); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:1px; }
+  .player-card-info { flex:1; overflow:hidden; }
+  .player-card-name { font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .player-card-sub { font-size:0.78rem; color:var(--text-dim); margin-top:2px; }
+  .player-card-stats { display:flex; gap:10px; margin-top:6px; }
+  .player-stat-badge { font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(17,85,204,0.2); border:1px solid rgba(17,85,204,0.3); color:#93C5FD; font-family:'DM Mono',monospace; }
+  .arrow { color:var(--text-dim); font-size:1.2rem; }
+
+  /* ── SLIDE PANEL ── */
+  .slide-panel { position:fixed; top:0; right:-700px; width:680px; height:100vh; background:rgba(5,27,56,0.98); border-left:1px solid var(--glass-border); z-index:200; overflow-y:auto; transition:right 0.4s cubic-bezier(0.16,1,0.3,1); backdrop-filter:blur(20px); }
+  .slide-panel.open { right:0; }
+  .panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:190; display:none; }
+  .panel-overlay.show { display:block; }
+  .panel-header { padding:1.5rem 2rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:rgba(5,27,56,0.95); z-index:10; }
+  .panel-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; }
+  .panel-close { background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-dim); padding:0.4rem 0.9rem; font-size:0.9rem; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+  .panel-close:hover { color:var(--white); }
+  .panel-body { padding:2rem; }
+  .panel-tabs { display:flex; gap:4px; background:rgba(255,255,255,0.04); border-radius:10px; padding:4px; margin-bottom:2rem; }
+  .panel-tab { flex:1; padding:0.6rem; border-radius:7px; text-align:center; cursor:pointer; font-size:0.78rem; font-weight:600; transition:all 0.2s; color:var(--text-dim); border:none; background:none; font-family:'DM Sans',sans-serif; }
+  .panel-tab.active { background:var(--blue); color:var(--white); }
+  .panel-section { display:none; }
+  .panel-section.active { display:block; animation:fadeIn 0.2s ease; }
+
+  /* ── FORMS ── */
+  .field-group { margin-bottom:1rem; }
+  .field-label { display:block; font-size:0.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.4rem; }
+  .field-input, .field-select { width:100%; padding:0.7rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:0.88rem; outline:none; transition:all 0.2s; }
+  .field-select option { background:var(--navy-mid); }
+  .field-input:focus, .field-select:focus { border-color:var(--blue-bright); background:rgba(26,109,255,0.08); }
+  .field-input::placeholder { color:rgba(255,255,255,0.25); }
+  .form-2col { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+  .form-actions { display:flex; gap:0.75rem; margin-top:1.5rem; }
+
+  /* ── TABLES ── */
+  .table-wrap { background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; overflow:hidden; margin-bottom:1.5rem; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:0.7rem 1.2rem; text-align:left; font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); background:rgba(255,255,255,0.02); }
+  td { padding:0.8rem 1.2rem; font-size:0.85rem; border-top:1px solid rgba(255,255,255,0.04); }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .amount-neg { color:#FC8181; font-family:'DM Mono',monospace; }
+  .amount-pos { color:#68D391; font-family:'DM Mono',monospace; }
+  .amount-neu { font-family:'DM Mono',monospace; }
+
+  /* ── BUDGET GRID ── */
+  .budget-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+  .budget-field { display:flex; align-items:center; gap:0.5rem; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:8px; padding:0.6rem 0.8rem; }
+  .budget-field-label { font-size:0.8rem; flex:1; }
+  .budget-field input { width:90px; padding:0.4rem 0.6rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--white); font-family:'DM Mono',monospace; font-size:0.85rem; outline:none; text-align:right; }
+  .budget-field input:focus { border-color:var(--blue-bright); }
+
+  /* ── CAT PILLS ── */
+  .cat-pill { padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:600; }
+  .cat-Housing{background:rgba(17,85,204,0.2);color:#93C5FD;}
+  .cat-Food{background:rgba(56,161,105,0.2);color:#68D391;}
+  .cat-Transport{background:rgba(229,62,62,0.2);color:#FC8181;}
+  .cat-Clothing{background:rgba(240,180,41,0.2);color:var(--gold);}
+  .cat-Entertainment{background:rgba(128,90,213,0.2);color:#B794F4;}
+  .cat-Family{background:rgba(237,137,54,0.2);color:#F6AD55;}
+  .cat-Savings{background:rgba(56,161,105,0.25);color:#68D391;}
+  .cat-Other{background:rgba(160,174,192,0.2);color:#A0AEC0;}
+
+  /* ── PROGRESS ── */
+  .progress-bg { height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; margin-top:6px; }
+  .progress-fill { height:100%; border-radius:10px; background:linear-gradient(90deg,var(--blue),var(--blue-bright)); transition:width 0.6s ease; }
+
+  /* ── TOAST ── */
+  .toast { position:fixed; bottom:2rem; right:2rem; background:rgba(10,45,85,0.97); border:1px solid var(--glass-border); border-radius:12px; padding:1rem 1.5rem; font-size:0.88rem; z-index:9999; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,0.4); transform:translateY(100px); opacity:0; transition:all 0.4s cubic-bezier(0.16,1,0.3,1); }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast-success { border-color:rgba(56,161,105,0.4); }
+  .toast-error { border-color:rgba(229,62,62,0.4); }
+
+  /* ── MISC ── */
+  .empty-state { text-align:center; padding:3rem; color:var(--text-dim); }
+  .divider { border:none; border-top:1px solid var(--glass-border); margin:1.5rem 0; }
+  .badge-admin { background:rgba(240,180,41,0.2); border:1px solid rgba(240,180,41,0.4); color:var(--gold); padding:2px 8px; border-radius:10px; font-size:0.68rem; font-weight:700; letter-spacing:1px; }
+  .info-row { display:flex; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.85rem; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--text-dim); }
+  .info-value { font-family:'DM Mono',monospace; }
+  @media(max-width:900px) { .stats-row{grid-template-columns:repeat(2,1fr)} .players-grid{grid-template-columns:1fr} .form-2col{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">⚽</div>
+      <span class="logo-title">FFplayerapp</span>
+      <span class="logo-sub">Advisor Panel</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Admin Email</label>
+      <input type="email" class="form-input" id="admin-email" placeholder="admin@flairfinancials.co.uk" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="admin-password" placeholder="Enter admin password" />
+    </div>
+    <button class="btn-primary" id="admin-login-btn" onclick="handleAdminLogin()">Access Admin Panel</button>
+    <div class="error-msg" id="admin-login-error">⚠ Invalid credentials or insufficient permissions.</div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="admin-page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">⚽</div>
+      <div>
+        <span class="brand-name">FFapp</span>
+        <span class="brand-tag">Advisor</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="switchView('players',this)"><span class="nav-icon">👥</span> Players</div>
+      <div class="nav-item" onclick="switchView('add-player',this)"><span class="nav-icon">➕</span> Add Player</div>
+      <div class="nav-item" onclick="switchView('overview',this)"><span class="nav-icon">📊</span> Overview</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="margin-bottom:4px;"><span id="admin-name-display" style="font-weight:600;color:var(--white);">Admin</span> <span class="badge-admin">ADMIN</span></div>
+      <button class="logout-btn" onclick="handleAdminLogout()" style="margin-top:8px;width:100%;">Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="admin-page-title">Players</div>
+      <div style="font-size:0.8rem;color:var(--text-dim);font-family:'DM Mono',monospace;" id="admin-date"></div>
+    </div>
+
+    <!-- PLAYERS PAGE -->
+    <div class="page active" id="view-players">
+      <div class="section-header">
+        <div>
+          <div class="section-title">All Players</div>
+          <div style="font-size:0.82rem;color:var(--text-dim);margin-top:2px;">Click a player to manage their profile, budget, expenses & goals</div>
+        </div>
+        <button class="btn btn-blue" onclick="switchView('add-player', document.querySelector('[onclick*=add-player]'))">+ Add Player</button>
+      </div>
+      <div id="players-grid" class="players-grid"></div>
+    </div>
+
+    <!-- ADD PLAYER PAGE -->
+    <div class="page" id="view-add-player">
+      <div class="section-header">
+        <div class="section-title">Add New Player</div>
+      </div>
+      <div style="max-width:600px;">
+        <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:2rem;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:1.25rem;">👤 Player Details</div>
+          <div class="form-2col">
+            <div class="field-group"><label class="field-label">Full Name *</label><input type="text" class="field-input" id="new-name" placeholder="e.g. Reece Welch" /></div>
+            <div class="field-group"><label class="field-label">Email *</label><input type="email" class="field-input" id="new-email" placeholder="player@email.com" /></div>
+          </div>
+          <div class="form-2col">
+            <div class="field-group"><label class="field-label">Password *</label><input type="password" class="field-input" id="new-password" placeholder="Min. 6 characters" /></div>
+            <div class="field-group"><label class="field-label">Date of Birth</label><input type="date" class="field-input" id="new-born" /></div>
+          </div>
+          <div class="form-2col">
+            <div class="field-group"><label class="field-label">Club</label><input type="text" class="field-input" id="new-club" placeholder="e.g. Everton FC" /></div>
+            <div class="field-group"><label class="field-label">Position</label><input type="text" class="field-input" id="new-position" placeholder="e.g. Centre-Back" /></div>
+          </div>
+          <div class="field-group"><label class="field-label">Weekly Net Wage (£)</label><input type="number" class="field-input" id="new-wage" placeholder="e.g. 4200" min="0" /></div>
+
+          <hr class="divider">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:1rem;">💰 Initial Weekly Budgets (£/week)</div>
+          <div class="budget-grid" id="new-budget-grid"></div>
+
+          <div class="form-actions">
+            <button class="btn btn-blue" style="flex:1;" onclick="createPlayer()">✅ CREATE PLAYER ACCOUNT</button>
+            <button class="btn btn-ghost" onclick="switchView('players',document.querySelector('[onclick*=\'players\']'))">Cancel</button>
+          </div>
+          <div class="error-msg" id="create-error" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page" id="view-overview">
+      <div class="section-title" style="margin-bottom:1.5rem;">Agency Overview</div>
+      <div class="stats-row" id="overview-stats"></div>
+      <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;">
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--glass-border);font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;">All Players Summary</div>
+        <table>
+          <thead><tr><th>Player</th><th>Club</th><th>Weekly Wage</th><th>Monthly Spend</th><th>Goals</th><th>Action</th></tr></thead>
+          <tbody id="overview-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /admin-page -->
+
+<!-- ═══ PLAYER SLIDE PANEL ═══ -->
+<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="player-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="panel-player-name">Player Name</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);" id="panel-player-sub"></div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕ Close</button>
+  </div>
+  <div class="panel-body">
+    <div class="panel-tabs">
+      <button class="panel-tab active" onclick="switchPanelTab('profile',this)">Profile</button>
+      <button class="panel-tab" onclick="switchPanelTab('budget',this)">Budget</button>
+      <button class="panel-tab" onclick="switchPanelTab('income',this)">Income</button>
+      <button class="panel-tab" onclick="switchPanelTab('expenses',this)">Expenses</button>
+      <button class="panel-tab" onclick="switchPanelTab('goals',this)">Goals</button>
+      <button class="panel-tab" onclick="switchPanelTab('security',this)">Security</button>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="panel-section active" id="panel-profile">
+      <div class="form-2col">
+        <div class="field-group"><label class="field-label">Full Name</label><input type="text" class="field-input" id="edit-name" /></div>
+        <div class="field-group"><label class="field-label">Email</label><input type="email" class="field-input" id="edit-email" /></div>
+      </div>
+      <div class="form-2col">
+        <div class="field-group"><label class="field-label">Club</label><input type="text" class="field-input" id="edit-club" /></div>
+        <div class="field-group"><label class="field-label">Position</label><input type="text" class="field-input" id="edit-position" /></div>
+      </div>
+      <div class="form-2col">
+        <div class="field-group"><label class="field-label">Weekly Net Wage (£)</label><input type="number" class="field-input" id="edit-wage" min="0" /></div>
+        <div class="field-group"><label class="field-label">Date of Birth</label><input type="date" class="field-input" id="edit-born" /></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-blue" onclick="saveProfile()">💾 Save Profile</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePlayer()" style="margin-left:auto;">🗑 Delete Player</button>
+      </div>
+    </div>
+
+    <!-- BUDGET -->
+    <div class="panel-section" id="panel-budget">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Set weekly spending limits for each category. Players see their progress in real time.</div>
+      <div class="budget-grid" id="edit-budget-grid"></div>
+      <div class="form-actions">
+        <button class="btn btn-blue" onclick="saveBudget()">💾 Save Budget Limits</button>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div class="panel-section" id="panel-income">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Log monthly income records for reference and reporting.</div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;margin-bottom:1rem;">Add / Update Month</div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Month</label>
+            <select class="field-select" id="inc-month">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div class="field-group"><label class="field-label">Year</label><input type="number" class="field-input" id="inc-year" value="2026" min="2020" max="2035" /></div>
+        </div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Gross Weekly (£)</label><input type="number" class="field-input" id="inc-gross" placeholder="0.00" min="0" /></div>
+          <div class="field-group"><label class="field-label">Net Weekly (£)</label><input type="number" class="field-input" id="inc-net" placeholder="0.00" min="0" /></div>
+        </div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Agent Fee %</label><input type="number" class="field-input" id="inc-agent" placeholder="10" min="0" max="100" /></div>
+          <div class="field-group"><label class="field-label">Notes</label><input type="text" class="field-input" id="inc-notes" placeholder="Optional notes..." /></div>
+        </div>
+        <button class="btn btn-blue" onclick="saveIncome()">💾 Save Record</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Month</th><th>Year</th><th>Gross/wk</th><th>Net/wk</th><th>Agent %</th></tr></thead>
+        <tbody id="income-table"></tbody></table>
+      </div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div class="panel-section" id="panel-expenses">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">View and manage all expenses for this player. You can also log expenses on their behalf.</div>
+      <!-- Admin add expense -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;margin-bottom:1rem;">Log Expense for Player</div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Date</label><input type="date" class="field-input" id="admin-exp-date" /></div>
+          <div class="field-group"><label class="field-label">Amount (£)</label><input type="number" class="field-input" id="admin-exp-amount" placeholder="0.00" min="0" /></div>
+        </div>
+        <div class="field-group"><label class="field-label">Description</label><input type="text" class="field-input" id="admin-exp-desc" placeholder="e.g. Rent, groceries..." /></div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Category</label>
+            <select class="field-select" id="admin-exp-cat">
+              <option>Housing</option><option>Food</option><option>Transport</option>
+              <option>Clothing</option><option>Entertainment</option><option>Family</option><option>Savings</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field-group"><label class="field-label">Payment Method</label>
+            <select class="field-select" id="admin-exp-method">
+              <option>Card</option><option>Cash</option><option>Bank Transfer</option><option>Direct Debit</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-blue btn-sm" onclick="adminAddExpense()">+ Log Expense</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="expenses-table"></tbody></table>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div class="panel-section" id="panel-goals">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Manage savings goals for this player.</div>
+      <!-- Add goal -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;margin-bottom:1rem;">Add Goal</div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Goal Name</label><input type="text" class="field-input" id="goal-name" placeholder="e.g. Property Fund" /></div>
+          <div class="field-group"><label class="field-label">Icon (emoji)</label><input type="text" class="field-input" id="goal-icon" placeholder="🏠" maxlength="4" /></div>
+        </div>
+        <div class="form-2col">
+          <div class="field-group"><label class="field-label">Target (£)</label><input type="number" class="field-input" id="goal-target" min="1" /></div>
+          <div class="field-group"><label class="field-label">Current (£)</label><input type="number" class="field-input" id="goal-current" min="0" value="0" /></div>
+        </div>
+        <button class="btn btn-blue btn-sm" onclick="adminAddGoal()">+ Add Goal</button>
+      </div>
+      <div id="goals-list"></div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="panel-section" id="panel-security">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.5rem;">Reset the player's login password. They will need to use the new password on their next login.</div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem;max-width:400px;">
+        <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;margin-bottom:1rem;">🔐 Reset Password</div>
+        <div class="field-group"><label class="field-label">New Password</label><input type="password" class="field-input" id="reset-password" placeholder="Min. 6 characters" /></div>
+        <div class="field-group"><label class="field-label">Confirm Password</label><input type="password" class="field-input" id="reset-password-confirm" placeholder="Repeat password" /></div>
+        <button class="btn btn-gold" onclick="resetPassword()" style="margin-top:0.5rem;">🔑 Set New Password</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-icon">✅</span><span id="toast-msg">Done!</span></div>
+
+<script>
+// ─────────────────────────────────────────
+// API + STATE
+// ─────────────────────────────────────────
+const CATEGORIES = ['Housing','Food','Transport','Clothing','Entertainment','Family','Savings','Other'];
+const CAT_ICONS = { Housing:'🏠', Food:'🛒', Transport:'🚗', Clothing:'👕', Entertainment:'🎯', Family:'👨‍👩‍👦', Savings:'💰', Other:'📌' };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const STATE = { admin: null, players: [], currentPlayer: null, currentPlayerData: null };
+
+const api = {
+  async get(path) {
+    const r = await fetch(path, { credentials: 'include' });
+    if (r.status === 401) { showLogin(); return null; }
+    return r.json();
+  },
+  async post(path, body) {
+    const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) });
+    return r.json();
+  },
+  async put(path, body) {
+    const r = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) });
+    return r.json();
+  },
+  async del(path) {
+    const r = await fetch(path, { method:'DELETE', credentials:'include' });
+    return r.json();
+  }
+};
+
+const fmt = n => Number(n || 0).toLocaleString('en-GB', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtShort = n => '£' + fmt(n);
+const fmtDate = d => { try { return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }); } catch { return d; } };
+const initials = name => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : '??';
+
+// ─────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────
+function showLogin() {
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('admin-page').style.display = 'none';
+}
+function showAdmin() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('admin-page').style.display = 'block';
+}
+
+async function handleAdminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const password = document.getElementById('admin-password').value;
+  const errEl = document.getElementById('admin-login-error');
+  const btn = document.getElementById('admin-login-btn');
+
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const result = await api.post('/api/auth/login', { email, password });
+  btn.disabled = false; btn.textContent = 'Access Admin Panel';
+
+  if (!result || result.error || result.role !== 'admin') {
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+  STATE.admin = result;
+  showAdmin();
+  initAdmin();
+}
+
+async function handleAdminLogout() {
+  await api.post('/api/auth/logout', {});
+  showLogin();
+}
+
+document.getElementById('admin-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAdminLogin(); });
+
+async function checkAdminSession() {
+  const user = await api.get('/api/auth/me');
+  if (user && !user.error && user.role === 'admin') {
+    STATE.admin = user;
+    showAdmin();
+    initAdmin();
+  } else {
+    showLogin();
+  }
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+function initAdmin() {
+  document.getElementById('admin-date').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('admin-name-display').textContent = STATE.admin.name;
+  buildBudgetGrid('new-budget-grid');
+  loadPlayers();
+}
+
+// ─────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────
+function switchView(view, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = { players:'Players', 'add-player':'Add New Player', overview:'Overview' };
+  document.getElementById('admin-page-title').textContent = titles[view] || view;
+  if (view === 'overview') loadOverview();
+}
+
+// ─────────────────────────────────────────
+// PLAYERS LIST
+// ─────────────────────────────────────────
+async function loadPlayers() {
+  const players = await api.get('/api/admin/players');
+  if (!players) return;
+  STATE.players = players;
+  renderPlayersGrid(players);
+}
+
+function renderPlayersGrid(players) {
+  const grid = document.getElementById('players-grid');
+  if (!players.length) {
+    grid.innerHTML = `<div class="empty-state"><div style="font-size:3rem;">👥</div><p style="margin-top:1rem;">No players yet. Add your first player!</p></div>`;
+    return;
+  }
+  grid.innerHTML = players.map(p => `
+    <div class="player-card" onclick="openPlayerPanel(${p.id})">
+      <div class="player-avatar">${initials(p.name)}</div>
+      <div class="player-card-info">
+        <div class="player-card-name">${p.name}</div>
+        <div class="player-card-sub">${p.club || 'No club'} · ${p.position || 'No position'}</div>
+        <div class="player-card-stats">
+          <span class="player-stat-badge">${fmtShort(p.weekly_wage_net)}/wk</span>
+          ${p.monthlySpend > 0 ? `<span class="player-stat-badge" style="background:rgba(229,62,62,0.15);border-color:rgba(229,62,62,0.3);color:#FC8181;">£${fmt(p.monthlySpend)} this month</span>` : ''}
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────
+// CREATE PLAYER
+// ─────────────────────────────────────────
+function buildBudgetGrid(containerId) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = CATEGORIES.map(cat => `
+    <div class="budget-field">
+      <span class="budget-field-label">${CAT_ICONS[cat]} ${cat}</span>
+      <input type="number" data-cat="${cat}" placeholder="0" min="0" />
+    </div>`).join('');
+}
+
+async function createPlayer() {
+  const name = document.getElementById('new-name').value.trim();
+  const email = document.getElementById('new-email').value.trim();
+  const password = document.getElementById('new-password').value;
+  const born = document.getElementById('new-born').value;
+  const club = document.getElementById('new-club').value.trim();
+  const position = document.getElementById('new-position').value.trim();
+  const wage = parseFloat(document.getElementById('new-wage').value) || 0;
+  const errEl = document.getElementById('create-error');
+
+  if (!name || !email || !password) { errEl.style.display='block'; errEl.textContent='⚠ Name, email, and password are required.'; return; }
+  if (password.length < 6) { errEl.style.display='block'; errEl.textContent='⚠ Password must be at least 6 characters.'; return; }
+
+  const budgets = CATEGORIES.map(cat => {
+    const val = document.querySelector(`#new-budget-grid input[data-cat="${cat}"]`)?.value;
+    return { category: cat, weekly_limit: parseFloat(val) || 0 };
+  }).filter(b => b.weekly_limit > 0);
+
+  const result = await api.post('/api/admin/players', { name, email, password, born, club, position, weekly_wage_net: wage, budgets });
+
+  if (result.error) { errEl.style.display='block'; errEl.textContent='⚠ ' + result.error; return; }
+  errEl.style.display = 'none';
+  showToast('✅', `${name} added successfully!`);
+  // Reset form
+  ['new-name','new-email','new-password','new-club','new-position','new-wage','new-born'].forEach(id => { document.getElementById(id).value = ''; });
+  document.querySelectorAll('#new-budget-grid input').forEach(i => i.value = '');
+
+  await loadPlayers();
+  switchView('players', document.querySelector('.nav-item'));
+}
+
+// ─────────────────────────────────────────
+// PLAYER PANEL
+// ─────────────────────────────────────────
+async function openPlayerPanel(playerId) {
+  const data = await api.get(`/api/admin/players/${playerId}`);
+  if (!data || data.error) { showToast('⚠️', 'Could not load player data', false); return; }
+
+  STATE.currentPlayer = playerId;
+  STATE.currentPlayerData = data;
+
+  document.getElementById('panel-player-name').textContent = data.name;
+  document.getElementById('panel-player-sub').textContent = `${data.club || ''} · ${data.position || ''}`;
+
+  // Fill profile
+  document.getElementById('edit-name').value = data.name || '';
+  document.getElementById('edit-email').value = data.email || '';
+  document.getElementById('edit-club').value = data.club || '';
+  document.getElementById('edit-position').value = data.position || '';
+  document.getElementById('edit-wage').value = data.weeklyWageNet || '';
+  document.getElementById('edit-born').value = data.born || '';
+
+  buildBudgetGrid('edit-budget-grid');
+  const budgetMap = {};
+  data.budgets.forEach(b => { budgetMap[b.category] = b.weekly_limit; });
+  document.querySelectorAll('#edit-budget-grid input[data-cat]').forEach(inp => {
+    inp.value = budgetMap[inp.dataset.cat] || '';
+  });
+
+  // Income
+  renderIncomeTable(data.income);
+
+  // Expenses
+  renderExpensesTable(data.expenses);
+
+  // Goals
+  renderGoalsList(data.savings);
+
+  // Income defaults
+  const now = new Date();
+  document.getElementById('inc-month').value = now.getMonth() + 1;
+  document.getElementById('inc-year').value = now.getFullYear();
+  document.getElementById('admin-exp-date').value = now.toISOString().split('T')[0];
+
+  // Reset password & security
+  document.getElementById('reset-password').value = '';
+  document.getElementById('reset-password-confirm').value = '';
+
+  // Switch to profile tab
+  switchPanelTab('profile', document.querySelector('.panel-tab'));
+
+  document.getElementById('player-panel').classList.add('open');
+  document.getElementById('panel-overlay').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('player-panel').classList.remove('open');
+  document.getElementById('panel-overlay').classList.remove('show');
+  STATE.currentPlayer = null;
+  STATE.currentPlayerData = null;
+}
+
+function switchPanelTab(tab, btn) {
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────
+// PROFILE SAVE / DELETE
+// ─────────────────────────────────────────
+async function saveProfile() {
+  const id = STATE.currentPlayer;
+  const name = document.getElementById('edit-name').value.trim();
+  const email = document.getElementById('edit-email').value.trim();
+  const club = document.getElementById('edit-club').value.trim();
+  const position = document.getElementById('edit-position').value.trim();
+  const weekly_wage_net = parseFloat(document.getElementById('edit-wage').value) || 0;
+  const born = document.getElementById('edit-born').value;
+
+  if (!name || !email) { showToast('⚠️', 'Name and email required', false); return; }
+  const result = await api.put(`/api/admin/players/${id}`, { name, email, club, position, weekly_wage_net, born });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  document.getElementById('panel-player-name').textContent = name;
+  showToast('✅', 'Profile saved');
+  loadPlayers();
+}
+
+async function deletePlayer() {
+  const id = STATE.currentPlayer;
+  const name = document.getElementById('edit-name').value || 'this player';
+  if (!confirm(`Permanently delete ${name}? This will remove all their data.`)) return;
+  const result = await api.del(`/api/admin/players/${id}`);
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  showToast('✅', `${name} deleted`);
+  closePanel();
+  loadPlayers();
+}
+
+// ─────────────────────────────────────────
+// BUDGET
+// ─────────────────────────────────────────
+async function saveBudget() {
+  const id = STATE.currentPlayer;
+  const budgets = CATEGORIES.map(cat => ({
+    category: cat,
+    weekly_limit: parseFloat(document.querySelector(`#edit-budget-grid input[data-cat="${cat}"]`)?.value) || 0
+  }));
+  const result = await api.put(`/api/admin/players/${id}/budget`, { budgets });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  showToast('✅', 'Budget limits saved');
+}
+
+// ─────────────────────────────────────────
+// INCOME
+// ─────────────────────────────────────────
+function renderIncomeTable(income) {
+  const tbody = document.getElementById('income-table');
+  if (!income.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-dim);">No income records yet.</td></tr>`; return; }
+  tbody.innerHTML = income.map(r => `<tr>
+    <td>${MONTHS[r.month - 1]}</td><td>${r.year}</td>
+    <td class="amount-pos">${fmtShort(r.gross_weekly)}</td>
+    <td class="amount-pos">${fmtShort(r.net_weekly)}</td>
+    <td class="amount-neu">${r.agent_fee_pct}%</td>
+  </tr>`).join('');
+}
+
+async function saveIncome() {
+  const id = STATE.currentPlayer;
+  const month = document.getElementById('inc-month').value;
+  const year = document.getElementById('inc-year').value;
+  const gross_weekly = parseFloat(document.getElementById('inc-gross').value) || 0;
+  const net_weekly = parseFloat(document.getElementById('inc-net').value) || 0;
+  const agent_fee_pct = parseFloat(document.getElementById('inc-agent').value) || 0;
+  const notes = document.getElementById('inc-notes').value;
+
+  const result = await api.post(`/api/admin/players/${id}/income`, { month, year, gross_weekly, net_weekly, agent_fee_pct, notes });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+
+  // Refresh income list
+  const data = await api.get(`/api/admin/players/${id}`);
+  if (data) { renderIncomeTable(data.income); }
+  showToast('✅', 'Income record saved');
+}
+
+// ─────────────────────────────────────────
+// EXPENSES
+// ─────────────────────────────────────────
+function renderExpensesTable(expenses) {
+  const tbody = document.getElementById('expenses-table');
+  if (!expenses.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-dim);">No expenses yet.</td></tr>`; return; }
+  tbody.innerHTML = expenses.map(e => `<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:0.8rem;">${fmtDate(e.date)}</td>
+    <td>${e.description}</td>
+    <td><span class="cat-pill cat-${e.category}">${e.category}</span></td>
+    <td class="amount-neg">${fmtShort(e.amount)}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="adminDeleteExpense(${e.id})">✕</button></td>
+  </tr>`).join('');
+}
+
+async function adminAddExpense() {
+  const id = STATE.currentPlayer;
+  const date = document.getElementById('admin-exp-date').value;
+  const amount = parseFloat(document.getElementById('admin-exp-amount').value);
+  const description = document.getElementById('admin-exp-desc').value.trim();
+  const category = document.getElementById('admin-exp-cat').value;
+  const payment_method = document.getElementById('admin-exp-method').value;
+
+  if (!date || isNaN(amount) || !description) { showToast('⚠️', 'Fill in all fields', false); return; }
+
+  const result = await api.post(`/api/admin/players/${id}/expenses`, { date, amount, description, category, payment_method });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+
+  const data = await api.get(`/api/admin/players/${id}`);
+  if (data) { renderExpensesTable(data.expenses); }
+  document.getElementById('admin-exp-amount').value = '';
+  document.getElementById('admin-exp-desc').value = '';
+  showToast('✅', `£${fmt(amount)} expense logged`);
+}
+
+async function adminDeleteExpense(expId) {
+  if (!confirm('Delete this expense?')) return;
+  const result = await api.del(`/api/admin/expenses/${expId}`);
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  const data = await api.get(`/api/admin/players/${STATE.currentPlayer}`);
+  if (data) { renderExpensesTable(data.expenses); }
+  showToast('✅', 'Expense deleted');
+}
+
+// ─────────────────────────────────────────
+// GOALS
+// ─────────────────────────────────────────
+function renderGoalsList(goals) {
+  const container = document.getElementById('goals-list');
+  if (!goals.length) { container.innerHTML = `<div class="empty-state"><div style="font-size:2.5rem;">🎯</div><p>No goals yet.</p></div>`; return; }
+  container.innerHTML = goals.map(g => {
+    const pct = g.target_amount > 0 ? Math.min(100, (g.current_amount / g.target_amount) * 100) : 0;
+    return `<div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;display:flex;align-items:flex-start;gap:1rem;">
+      <div style="font-size:1.8rem;">${g.icon}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:0.9rem;">${g.name}</div>
+        <div style="font-size:0.78rem;color:var(--text-dim);font-family:'DM Mono',monospace;">${fmtShort(g.current_amount)} / ${fmtShort(g.target_amount)}</div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%;"></div></div>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;">${Math.round(pct)}% complete</div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="adminUpdateGoal(${g.id},'${g.name}','${g.icon}',${g.current_amount},${g.target_amount})">Update</button>
+          <button class="btn btn-danger btn-sm" onclick="adminDeleteGoal(${g.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function adminAddGoal() {
+  const id = STATE.currentPlayer;
+  const name = document.getElementById('goal-name').value.trim();
+  const icon = document.getElementById('goal-icon').value.trim() || '🎯';
+  const target_amount = parseFloat(document.getElementById('goal-target').value);
+  const current_amount = parseFloat(document.getElementById('goal-current').value) || 0;
+  if (!name || isNaN(target_amount)) { showToast('⚠️', 'Name and target required', false); return; }
+
+  const result = await api.post(`/api/admin/players/${id}/savings`, { name, icon, target_amount, current_amount });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+
+  const data = await api.get(`/api/admin/players/${id}`);
+  if (data) { renderGoalsList(data.savings); STATE.currentPlayerData = data; }
+  document.getElementById('goal-name').value = ''; document.getElementById('goal-icon').value = '';
+  document.getElementById('goal-target').value = ''; document.getElementById('goal-current').value = '0';
+  showToast('✅', `Goal "${name}" added`);
+}
+
+async function adminUpdateGoal(id, name, icon, current, target) {
+  const newAmount = prompt(`Update "${name}" current amount:\n\nCurrent: £${fmt(current)}\nTarget: £${fmt(target)}\n\nEnter new amount:`, current);
+  if (newAmount === null) return;
+  const val = parseFloat(newAmount);
+  if (isNaN(val) || val < 0) { showToast('⚠️', 'Invalid amount', false); return; }
+
+  const result = await api.put(`/api/admin/savings/${id}`, { current_amount: val, name, icon, target_amount: target });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+
+  const data = await api.get(`/api/admin/players/${STATE.currentPlayer}`);
+  if (data) { renderGoalsList(data.savings); }
+  showToast('✅', 'Goal updated');
+}
+
+async function adminDeleteGoal(goalId) {
+  if (!confirm('Delete this goal?')) return;
+  const result = await api.del(`/api/admin/savings/${goalId}`);
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  const data = await api.get(`/api/admin/players/${STATE.currentPlayer}`);
+  if (data) { renderGoalsList(data.savings); }
+  showToast('✅', 'Goal deleted');
+}
+
+// ─────────────────────────────────────────
+// SECURITY
+// ─────────────────────────────────────────
+async function resetPassword() {
+  const pwd = document.getElementById('reset-password').value;
+  const confirm = document.getElementById('reset-password-confirm').value;
+  if (!pwd || pwd.length < 6) { showToast('⚠️', 'Password must be at least 6 characters', false); return; }
+  if (pwd !== confirm) { showToast('⚠️', 'Passwords do not match', false); return; }
+  const result = await api.post(`/api/admin/players/${STATE.currentPlayer}/reset-password`, { newPassword: pwd });
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+  document.getElementById('reset-password').value = '';
+  document.getElementById('reset-password-confirm').value = '';
+  showToast('✅', 'Password reset successfully');
+}
+
+// ─────────────────────────────────────────
+// OVERVIEW
+// ─────────────────────────────────────────
+async function loadOverview() {
+  const [stats, players] = await Promise.all([
+    api.get('/api/admin/overview'),
+    api.get('/api/admin/players')
+  ]);
+  if (!stats || !players) return;
+
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-card-accent accent-blue"></div><span class="stat-icon">👥</span><div class="stat-value">${stats.playerCount}</div><div class="stat-label">Total Players</div></div>
+    <div class="stat-card"><div class="stat-card-accent accent-red"></div><span class="stat-icon">🛒</span><div class="stat-value">${fmtShort(stats.totalMonthlySpend)}</div><div class="stat-label">Agency Monthly Spend</div></div>
+    <div class="stat-card"><div class="stat-card-accent accent-gold"></div><span class="stat-icon">🎯</span><div class="stat-value">${fmtShort(stats.totalSavingsCurrent)}</div><div class="stat-label">Total Saved (Goals)</div></div>
+    <div class="stat-card"><div class="stat-card-accent accent-green"></div><span class="stat-icon">📈</span><div class="stat-value">${fmtShort(stats.totalSavingsTarget)}</div><div class="stat-label">Total Goals Target</div></div>`;
+
+  const tbody = document.getElementById('overview-table');
+  tbody.innerHTML = players.map(p => `<tr>
+    <td style="font-weight:600;">${p.name}</td>
+    <td style="color:var(--text-dim);">${p.club || '—'}</td>
+    <td class="amount-pos">${fmtShort(p.weekly_wage_net)}/wk</td>
+    <td class="amount-neg">${fmtShort(p.monthlySpend)}</td>
+    <td>${p.goalCount} goal${p.goalCount !== 1 ? 's' : ''}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openPlayerPanel(${p.id})">Manage →</button></td>
+  </tr>`).join('');
+}
+
+// ─────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────
+function showToast(icon, msg, success = true) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast ' + (success ? 'toast-success' : 'toast-error') + ' show';
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ─────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', checkAdminSession);
+</script>
+</body>
+</html>
