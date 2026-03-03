@@ -74,6 +74,12 @@ db.exec(`
     notes         TEXT    DEFAULT '',
     UNIQUE(user_id, month, year)
   );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    sid        TEXT    PRIMARY KEY,
+    sess       TEXT    NOT NULL,
+    expired_at INTEGER NOT NULL
+  );
 `);
 
 // ─── PREPARED STATEMENTS ──────────────────────────────────────────────────────
@@ -214,4 +220,42 @@ function seedAdminIfEmpty() {
   }
 }
 
-module.exports = { db, stmts, getSummary, seedAdminIfEmpty };
+// ─── SESSION STORE (pure better-sqlite3, no extra packages) ───────────────────
+
+function buildSessionStore(session) {
+  const Store = session.Store;
+  class SQLiteSessionStore extends Store {
+    constructor() {
+      super();
+      // Clean up expired sessions every 10 minutes
+      setInterval(() => {
+        db.prepare('DELETE FROM sessions WHERE expired_at < ?').run(Date.now());
+      }, 10 * 60 * 1000);
+    }
+    get(sid, cb) {
+      try {
+        const row = db.prepare('SELECT sess, expired_at FROM sessions WHERE sid = ?').get(sid);
+        if (!row || row.expired_at < Date.now()) return cb(null, null);
+        cb(null, JSON.parse(row.sess));
+      } catch (e) { cb(e); }
+    }
+    set(sid, sess, cb) {
+      try {
+        const maxAge = sess.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000;
+        const expiredAt = Date.now() + maxAge;
+        db.prepare('INSERT OR REPLACE INTO sessions (sid, sess, expired_at) VALUES (?, ?, ?)')
+          .run(sid, JSON.stringify(sess), expiredAt);
+        cb(null);
+      } catch (e) { cb(e); }
+    }
+    destroy(sid, cb) {
+      try {
+        db.prepare('DELETE FROM sessions WHERE sid = ?').run(sid);
+        cb(null);
+      } catch (e) { cb(e); }
+    }
+  }
+  return new SQLiteSessionStore();
+}
+
+module.exports = { db, stmts, getSummary, seedAdminIfEmpty, buildSessionStore };

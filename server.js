@@ -4,8 +4,7 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-const SQLiteStore = require('connect-sqlite3')(session);
-const { db, stmts, getSummary, seedAdminIfEmpty } = require('./database');
+const { db, stmts, getSummary, seedAdminIfEmpty, buildSessionStore } = require('./database');
 const { requireAuth, requireAdmin, attachUser } = require('./middleware');
 
 const app = express();
@@ -20,7 +19,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-  store: new SQLiteStore({ db: 'flair.db', dir: './data' }),
+  store: buildSessionStore(session),
   secret: process.env.SESSION_SECRET || 'dev-secret-please-change-in-production',
   resave: false,
   saveUninitialized: false,
