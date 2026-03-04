@@ -161,6 +161,20 @@ app.delete('/api/savings/:id', requireAuth, (req, res) => {
 
 // ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 
+// Create another advisor (admin) account
+app.post('/api/admin/advisors', requireAuth, requireAdmin, (req, res) => {
+  const { email, password, name } = req.body;
+  if (!email || !password || !name) return res.status(400).json({ error: 'email, password, and name required' });
+
+  const existing = stmts.getUserByEmail.get(email.toLowerCase().trim());
+  if (existing) return res.status(409).json({ error: 'Email already in use' });
+
+  const hash = bcrypt.hashSync(password, 12);
+  const result = stmts.createUser.run(email.toLowerCase().trim(), hash, 'admin', name.trim(), null, null, 0, null);
+  const user = stmts.getUserById.get(result.lastInsertRowid);
+  res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role });
+});
+
 // List all players
 app.get('/api/admin/players', requireAuth, requireAdmin, (req, res) => {
   const players = stmts.getAllPlayers.all();
