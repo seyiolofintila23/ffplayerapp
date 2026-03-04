@@ -15,6 +15,7 @@ const VALID_METHODS = ['Card', 'Cash', 'Bank Transfer', 'Direct Debit'];
 
 // ─── MIDDLEWARE ────────────────────────────────────────────────────────────────
 
+app.set('trust proxy', 1); // Required for secure cookies behind Render/Cloudflare proxy
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
