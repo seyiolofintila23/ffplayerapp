@@ -200,9 +200,55 @@
   .empty-state { text-align:center; padding:3rem 2rem; color:var(--text-dim); }
   .empty-state-icon { font-size:3rem; margin-bottom:1rem; }
 
+  /* ── SIDEBAR OVERLAY ── */
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:90; }
+  .sidebar-overlay.show { display:block; }
+  .sidebar { transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); }
+
+  /* ── MOBILE BOTTOM NAV ── */
+  .mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(5,27,56,0.97); border-top:1px solid var(--glass-border); z-index:100; padding-bottom:env(safe-area-inset-bottom,0); backdrop-filter:blur(20px); }
+  .mobile-nav-items { display:flex; }
+  .mobile-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:0.6rem 0; cursor:pointer; color:var(--text-dim); transition:color 0.2s; border:none; background:none; font-family:'DM Sans',sans-serif; }
+  .mobile-nav-item.active { color:var(--blue-bright); }
+  .mobile-nav-icon { font-size:1.25rem; }
+  .mobile-nav-label { font-size:0.6rem; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
+
   /* ── RESPONSIVE ── */
-  @media(max-width:1100px) { .stats-grid{grid-template-columns:repeat(2,1fr)} .charts-row{grid-template-columns:1fr} .hero-stats{display:none} .savings-grid{grid-template-columns:repeat(2,1fr)} }
-  @media(max-width:768px) { .sidebar{transform:translateX(-240px)} .main-content{margin-left:0} .tracker-grid{grid-template-columns:1fr} .form-row{grid-template-columns:1fr} }
+  @media(max-width:1100px) {
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .charts-row { grid-template-columns:1fr; }
+    .hero-stats { display:none; }
+    .savings-grid { grid-template-columns:repeat(2,1fr); }
+  }
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-240px); }
+    .sidebar.open { transform:translateX(0); }
+    .main-content { margin-left:0; padding-bottom:72px; }
+    .mobile-nav { display:block; }
+    .topbar { padding:0.9rem 1.25rem; }
+    .topbar-date { display:none; }
+    .page-content { padding:1rem; }
+    .player-hero { flex-direction:column; text-align:center; gap:1rem; padding:1.25rem; }
+    .hero-info { text-align:center; }
+    .hero-name { font-size:2rem; }
+    .hero-badges { justify-content:center; }
+    .tracker-grid { grid-template-columns:1fr; }
+    .form-row { grid-template-columns:1fr; }
+    .savings-grid { grid-template-columns:1fr 1fr; }
+    .table-card { overflow-x:auto; }
+    table { min-width:480px; }
+    .charts-row { gap:1rem; }
+    .toast { bottom:5rem; right:1rem; left:1rem; }
+  }
+  @media(max-width:480px) {
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .savings-grid { grid-template-columns:1fr; }
+    .hero-name { font-size:1.6rem; }
+    .page-content { padding:0.75rem; }
+    .login-card { padding:2rem 1.25rem; margin:1rem; }
+    table { min-width:380px; }
+    .stat-card-value { font-size:1.6rem; }
+  }
 </style>
 </head>
 <body>
@@ -244,16 +290,17 @@
 
 <!-- ═══ DASHBOARD ═══ -->
 <div id="dashboard-page">
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">⚽</div>
       <span class="logo-text">FFapp</span>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="switchPage('overview',this)"><span class="nav-icon">📊</span> Overview</div>
-      <div class="nav-item" onclick="switchPage('spending',this)"><span class="nav-icon">💳</span> Spending</div>
-      <div class="nav-item" onclick="switchPage('tracker',this)"><span class="nav-icon">➕</span> Add Expense</div>
-      <div class="nav-item" onclick="switchPage('savings',this)"><span class="nav-icon">🏦</span> Savings & Goals</div>
+      <div class="nav-item active" data-page="overview" onclick="switchPage('overview',this)"><span class="nav-icon">📊</span> Overview</div>
+      <div class="nav-item" data-page="spending" onclick="switchPage('spending',this)"><span class="nav-icon">💳</span> Spending</div>
+      <div class="nav-item" data-page="tracker" onclick="switchPage('tracker',this)"><span class="nav-icon">➕</span> Add Expense</div>
+      <div class="nav-item" data-page="savings" onclick="switchPage('savings',this)"><span class="nav-icon">🏦</span> Savings & Goals</div>
     </nav>
     <div class="sidebar-player">
       <div class="player-avatar" id="sidebar-initials">--</div>
@@ -426,6 +473,15 @@
   </div>
 </div>
 
+<nav class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-items">
+    <button class="mobile-nav-item active" data-page="overview" onclick="switchPage('overview',null)"><span class="mobile-nav-icon">📊</span><span class="mobile-nav-label">Overview</span></button>
+    <button class="mobile-nav-item" data-page="spending" onclick="switchPage('spending',null)"><span class="mobile-nav-icon">💳</span><span class="mobile-nav-label">Spending</span></button>
+    <button class="mobile-nav-item" data-page="tracker" onclick="switchPage('tracker',null)"><span class="mobile-nav-icon">➕</span><span class="mobile-nav-label">Add</span></button>
+    <button class="mobile-nav-item" data-page="savings" onclick="switchPage('savings',null)"><span class="mobile-nav-icon">🏦</span><span class="mobile-nav-label">Savings</span></button>
+  </div>
+</nav>
+
 <div class="toast" id="toast">
   <span id="toast-icon">✅</span>
   <span id="toast-msg">Done!</span>
@@ -584,15 +640,26 @@ function initDashboard() {
 function switchPage(page, el) {
   document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  el.classList.add('active');
+  document.querySelectorAll(`[data-page="${page}"]`).forEach(n => n.classList.add('active'));
   const titles = { overview:'Overview', spending:'Spending Breakdown', tracker:'Expense Tracker', savings:'Savings & Goals' };
   document.getElementById('page-title').textContent = titles[page];
+  closeSidebar();
 
   if (page === 'overview') loadOverview();
   if (page === 'spending') loadSpending();
   if (page === 'tracker') loadTracker();
   if (page === 'savings') loadSavings();
+}
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
 }
 
 // ─────────────────────────────────────────
