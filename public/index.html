@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FFplayerapp – Player Portal</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1155CC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FFplayerapp">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -997,6 +1002,15 @@ function showToast(icon, msg, success = true) {
 // BOOT
 // ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', checkSession);
+
+// ─────────────────────────────────────────
+// SERVICE WORKER (PWA – instant repeat loads)
+// ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
