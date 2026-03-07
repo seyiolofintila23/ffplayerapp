@@ -418,6 +418,10 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// ─── HEALTH / KEEPALIVE ──────────────────────────────────────────────────────
+
+app.get('/ping', (req, res) => res.json({ ok: true }));
+
 // ─── ADMIN PANEL ROUTE ───────────────────────────────────────────────────────
 
 app.get('/ffadmin', (req, res) => {
