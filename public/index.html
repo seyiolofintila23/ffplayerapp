@@ -148,13 +148,59 @@
   .tracker-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:16px; padding:1.5rem; }
   .tracker-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:1.5px; margin-bottom:1.25rem; display:flex; align-items:center; gap:10px; }
   .form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem; }
-  .tracker-input-group { margin-bottom:0.75rem; }
-  .tracker-label { display:block; font-size:0.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.4rem; }
-  .tracker-input, .tracker-select { width:100%; padding:0.7rem 0.9rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:0.88rem; outline:none; transition:all 0.2s; }
+  .tracker-input-group { margin-bottom:1rem; }
+  .tracker-label { display:block; font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.5rem; }
+  .tracker-input, .tracker-select { width:100%; padding:0.9rem 1.1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:1rem; outline:none; transition:all 0.2s; }
   .tracker-select option { background:var(--navy-mid); }
-  .tracker-input:focus, .tracker-select:focus { border-color:var(--blue-bright); background:rgba(26,109,255,0.08); }
-  .add-expense-btn { width:100%; padding:0.8rem; background:linear-gradient(135deg,var(--blue),var(--blue-bright)); border:none; border-radius:8px; color:white; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s; margin-top:0.5rem; box-shadow:0 4px 16px rgba(17,85,204,0.3); }
+  .tracker-input:focus, .tracker-select:focus { border-color:var(--blue-bright); background:rgba(26,109,255,0.08); box-shadow:0 0 0 3px rgba(26,109,255,0.12); }
+  .tracker-input::placeholder { color:rgba(255,255,255,0.25); font-size:0.95rem; }
+  .add-expense-btn { width:100%; padding:1rem; background:linear-gradient(135deg,var(--blue),var(--blue-bright)); border:none; border-radius:10px; color:white; font-family:'Bebas Neue',sans-serif; font-size:1.15rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s; margin-top:0.75rem; box-shadow:0 4px 16px rgba(17,85,204,0.3); }
   .add-expense-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(17,85,204,0.5); }
+  .add-expense-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  /* ── CATEGORY PICKER ── */
+  .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.6rem; }
+  .cat-btn { background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.08); border-radius:12px; padding:0.85rem 0.4rem 0.7rem; cursor:pointer; transition:all 0.18s; display:flex; flex-direction:column; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; }
+  .cat-btn-icon { font-size:1.6rem; line-height:1; }
+  .cat-btn-label { font-size:0.65rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-dim); text-align:center; line-height:1.2; }
+  .cat-btn:hover { background:rgba(17,85,204,0.12); border-color:rgba(17,85,204,0.35); }
+  .cat-btn:hover .cat-btn-label { color:var(--white); }
+  .cat-btn.active { background:rgba(17,85,204,0.25); border-color:rgba(17,85,204,0.7); box-shadow:0 0 0 2px rgba(17,85,204,0.2); }
+  .cat-btn.active .cat-btn-label { color:var(--white); }
+
+  /* ── PAYMENT METHOD PICKER ── */
+  .method-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.5rem; }
+  .method-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.65rem 0.4rem; cursor:pointer; transition:all 0.18s; font-size:0.72rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-dim); font-family:'DM Sans',sans-serif; white-space:nowrap; }
+  .method-btn:hover { background:rgba(255,255,255,0.08); color:var(--white); }
+  .method-btn.active { background:rgba(17,85,204,0.2); border-color:rgba(17,85,204,0.5); color:var(--white); }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone { border:2px dashed rgba(255,255,255,0.15); border-radius:14px; padding:2.5rem 1.5rem; text-align:center; cursor:pointer; transition:all 0.2s; }
+  .upload-zone:hover { border-color:rgba(17,85,204,0.5); background:rgba(17,85,204,0.05); }
+  .upload-icon { font-size:2.5rem; margin-bottom:0.6rem; }
+  .upload-text { font-weight:600; font-size:0.95rem; margin-bottom:0.35rem; }
+  .upload-sub { font-size:0.75rem; color:var(--text-dim); }
+
+  /* ── REVIEW MODAL ── */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; display:flex; align-items:center; justify-content:center; padding:1rem; backdrop-filter:blur(6px); }
+  .modal-box { background:var(--navy-mid); border:1px solid var(--glass-border); border-radius:20px; width:100%; max-width:620px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-header { padding:1.4rem 1.5rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .modal-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:1.5px; }
+  .modal-close { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--text-dim); font-size:1rem; cursor:pointer; padding:0.3rem 0.7rem; transition:all 0.2s; }
+  .modal-close:hover { color:var(--white); }
+  .modal-sub { padding:1rem 1.5rem 0.5rem; font-size:0.82rem; color:var(--text-dim); flex-shrink:0; }
+  .modal-footer { padding:1.25rem 1.5rem; border-top:1px solid var(--glass-border); flex-shrink:0; }
+  #review-list { overflow-y:auto; flex:1; padding:0.75rem 1.5rem; }
+  .review-item { display:flex; align-items:center; gap:0.85rem; padding:0.85rem; border-radius:10px; margin-bottom:0.5rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); transition:opacity 0.2s; }
+  .review-item.excluded { opacity:0.35; }
+  .review-check { width:20px; height:20px; accent-color:var(--blue); cursor:pointer; flex-shrink:0; }
+  .review-cat-icon { font-size:1.4rem; flex-shrink:0; }
+  .review-info { flex:1; min-width:0; }
+  .review-desc { font-size:0.88rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .review-date { font-size:0.72rem; color:var(--text-dim); margin-top:2px; }
+  .review-cat-select { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:6px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:0.72rem; padding:4px 6px; flex-shrink:0; }
+  .review-amount { font-family:'DM Mono',monospace; font-weight:600; color:#FC8181; flex-shrink:0; font-size:0.92rem; }
+  @media(max-width:480px) { .method-grid{grid-template-columns:repeat(2,1fr)} .modal-box{max-height:92vh} }
 
   /* ── BUDGET BARS ── */
   .budget-category { margin-bottom:1rem; }
@@ -381,59 +427,102 @@
     <!-- TRACKER -->
     <div class="page-content" id="page-tracker">
       <div class="section-header">
-        <div class="section-title">Expense Tracker</div>
-        <div class="section-sub">Log a new expense — your budget updates automatically</div>
+        <div class="section-title">Add Expense</div>
+        <div class="section-sub">Tap a category, fill in the details — done in seconds</div>
       </div>
+
       <div class="tracker-grid">
+        <!-- LEFT: Log form -->
         <div class="tracker-card">
-          <div class="tracker-title">➕ Log New Expense</div>
-          <div class="form-row">
+          <div class="tracker-title">💳 What did you spend on?</div>
+          <div class="cat-grid" id="cat-grid">
+            <button class="cat-btn" onclick="selectCat('Housing',this)"><span class="cat-btn-icon">🏠</span><span class="cat-btn-label">Rent / Bills</span></button>
+            <button class="cat-btn" onclick="selectCat('Food',this)"><span class="cat-btn-icon">🍔</span><span class="cat-btn-label">Food &amp; Drink</span></button>
+            <button class="cat-btn" onclick="selectCat('Transport',this)"><span class="cat-btn-icon">🚗</span><span class="cat-btn-label">Travel</span></button>
+            <button class="cat-btn" onclick="selectCat('Clothing',this)"><span class="cat-btn-icon">👟</span><span class="cat-btn-label">Clothes</span></button>
+            <button class="cat-btn" onclick="selectCat('Entertainment',this)"><span class="cat-btn-icon">🎮</span><span class="cat-btn-label">Fun &amp; Nights Out</span></button>
+            <button class="cat-btn" onclick="selectCat('Family',this)"><span class="cat-btn-icon">👨‍👩‍👦</span><span class="cat-btn-label">Family</span></button>
+            <button class="cat-btn" onclick="selectCat('Savings',this)"><span class="cat-btn-icon">💰</span><span class="cat-btn-label">Savings</span></button>
+            <button class="cat-btn" onclick="selectCat('Other',this)"><span class="cat-btn-icon">📌</span><span class="cat-btn-label">Other</span></button>
+          </div>
+
+          <div class="form-row" style="margin-top:1.25rem;">
             <div class="tracker-input-group">
-              <label class="tracker-label">Date</label>
+              <label class="tracker-label">💷 How much?</label>
+              <input type="number" class="tracker-input" id="exp-amount" placeholder="0.00" step="0.01" min="0" inputmode="decimal" />
+            </div>
+            <div class="tracker-input-group">
+              <label class="tracker-label">📅 When?</label>
               <input type="date" class="tracker-input" id="exp-date" />
             </div>
-            <div class="tracker-input-group">
-              <label class="tracker-label">Amount (£)</label>
-              <input type="number" class="tracker-input" id="exp-amount" placeholder="0.00" step="0.01" min="0" />
-            </div>
           </div>
+
           <div class="tracker-input-group">
-            <label class="tracker-label">Description</label>
-            <input type="text" class="tracker-input" id="exp-desc" placeholder="e.g. Gym session, Dinner, Rent..." />
+            <label class="tracker-label">✏️ What was it for?</label>
+            <input type="text" class="tracker-input" id="exp-desc" placeholder="e.g. Nando's, Nike trainers, petrol..." />
           </div>
-          <div class="form-row">
-            <div class="tracker-input-group">
-              <label class="tracker-label">Category</label>
-              <select class="tracker-select" id="exp-cat">
-                <option>Housing</option><option>Food</option><option>Transport</option>
-                <option>Clothing</option><option>Entertainment</option><option>Family</option>
-                <option>Savings</option><option>Other</option>
-              </select>
-            </div>
-            <div class="tracker-input-group">
-              <label class="tracker-label">Payment Method</label>
-              <select class="tracker-select" id="exp-method">
-                <option>Card</option><option>Cash</option><option>Bank Transfer</option><option>Direct Debit</option>
-              </select>
-            </div>
-          </div>
+
           <div class="tracker-input-group">
-            <label class="tracker-label">Notes (Optional)</label>
-            <input type="text" class="tracker-input" id="exp-notes" placeholder="Any additional notes..." />
+            <label class="tracker-label">💳 How did you pay?</label>
+            <div class="method-grid">
+              <button class="method-btn active" onclick="selectMethod('Card',this)">💳 Card</button>
+              <button class="method-btn" onclick="selectMethod('Cash',this)">💵 Cash</button>
+              <button class="method-btn" onclick="selectMethod('Bank Transfer',this)">🏦 Transfer</button>
+              <button class="method-btn" onclick="selectMethod('Direct Debit',this)">📅 Direct Debit</button>
+            </div>
           </div>
-          <button class="add-expense-btn" onclick="addExpense()">➕ ADD TO BUDGET</button>
+
+          <button class="add-expense-btn" id="add-exp-btn" onclick="addExpense()">➕ ADD EXPENSE</button>
         </div>
+
+        <!-- RIGHT: Budget bars -->
         <div class="tracker-card">
-          <div class="tracker-title">📊 Budget Status</div>
+          <div class="tracker-title">📊 Budget This Week</div>
           <div id="budget-bars"></div>
         </div>
       </div>
+
+      <!-- Bank statement smart import -->
+      <div class="tracker-card" style="margin-bottom:2rem;">
+        <div class="tracker-title">📱 Smart Import — Bank Statement</div>
+        <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.25rem;">Screenshot your banking app and we'll read your transactions automatically — works with Monzo, Barclays, Lloyds, HSBC, Santander, and more.</p>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('statement-file').click()">
+          <div class="upload-icon">📸</div>
+          <div class="upload-text">Tap to upload bank statement screenshot</div>
+          <div class="upload-sub">PNG, JPG or screenshot from any banking app</div>
+          <input type="file" id="statement-file" accept="image/*" hidden onchange="handleStatementUpload(this)">
+        </div>
+        <div id="parse-status" style="display:none;text-align:center;padding:2rem;color:var(--text-dim);">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;">⏳</div>
+          <div style="font-weight:600;font-size:0.95rem;">Reading your transactions...</div>
+          <div style="font-size:0.8rem;margin-top:0.35rem;">This usually takes 5–10 seconds</div>
+        </div>
+      </div>
+
+      <!-- All expenses table -->
       <div class="table-card">
         <div class="table-header"><div class="table-header-title">📋 All Expenses</div></div>
-        <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Method</th><th></th></tr></thead>
-          <tbody id="all-expense-body"></tbody>
-        </table>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Method</th><th></th></tr></thead>
+            <tbody id="all-expense-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REVIEW MODAL ═══ -->
+    <div class="modal-overlay" id="review-modal" style="display:none;" onclick="if(event.target===this)closeReviewModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">📋 Review Transactions</div>
+          <button class="modal-close" onclick="closeReviewModal()">✕</button>
+        </div>
+        <div class="modal-sub">Untick anything you don't want to add. You can change the category too.</div>
+        <div id="review-list"></div>
+        <div class="modal-footer">
+          <button class="add-expense-btn" id="confirm-import-btn" onclick="confirmImport()">✅ ADD TO MY BUDGET</button>
+        </div>
       </div>
     </div>
 
@@ -826,11 +915,33 @@ async function loadSpending() {
 // ─────────────────────────────────────────
 // TRACKER
 // ─────────────────────────────────────────
+let _selectedCat = 'Food';
+let _selectedMethod = 'Card';
+let _pendingImports = [];
+
+function selectCat(cat, btn) {
+  _selectedCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+function selectMethod(method, btn) {
+  _selectedMethod = method;
+  document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
 async function loadTracker() {
   const [expenses, budget] = await Promise.all([api.get('/api/expenses'), api.get('/api/budget')]);
   if (!expenses || !budget) return;
   STATE.expenses = expenses;
   STATE.budget = budget;
+  // Set today's date and default selections
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-date').value = today;
+  // Default to Food selected
+  const foodBtn = document.querySelector('.cat-btn[onclick*="Food"]');
+  if (foodBtn && !document.querySelector('.cat-btn.active')) selectCat('Food', foodBtn);
   renderBudgetBars();
   renderAllExpenses();
 }
@@ -887,26 +998,116 @@ async function addExpense() {
   const date = document.getElementById('exp-date').value;
   const amount = document.getElementById('exp-amount').value;
   const desc = document.getElementById('exp-desc').value.trim();
-  const cat = document.getElementById('exp-cat').value;
-  const method = document.getElementById('exp-method').value;
-  const notes = document.getElementById('exp-notes').value.trim();
 
-  if (!date || !amount || !desc) { showToast('⚠️', 'Please fill in all required fields.', false); return; }
+  if (!date || !amount || !desc) { showToast('⚠️', 'Fill in the amount and description.', false); return; }
+  if (!_selectedCat) { showToast('⚠️', 'Tap a category first.', false); return; }
 
-  const result = await api.post('/api/expenses', { date, amount: parseFloat(amount), description: desc, category: cat, payment_method: method, notes });
+  const btn = document.getElementById('add-exp-btn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+
+  const result = await api.post('/api/expenses', {
+    date, amount: parseFloat(amount), description: desc,
+    category: _selectedCat, payment_method: _selectedMethod, notes: ''
+  });
+  btn.disabled = false; btn.textContent = '➕ ADD EXPENSE';
+
   if (result.error) { showToast('⚠️', result.error, false); return; }
 
   STATE.expenses.unshift(result);
   document.getElementById('exp-amount').value = '';
   document.getElementById('exp-desc').value = '';
-  document.getElementById('exp-notes').value = '';
 
-  // Refresh summary for updated budget bars
   const data = await api.get('/api/summary');
   if (data) { STATE.summary = data; }
   renderBudgetBars();
   renderAllExpenses();
   showToast('✅', `£${fmt(result.amount)} logged under ${result.category}`);
+}
+
+// ─── BANK STATEMENT IMPORT ─────────────────────────────────────────────────
+function handleStatementUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('parse-status').style.display = 'block';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    const mimeType = file.type || 'image/jpeg';
+    const result = await api.post('/api/expenses/parse-statement', { image: base64, mimeType });
+
+    document.getElementById('upload-zone').style.display = 'block';
+    document.getElementById('parse-status').style.display = 'none';
+    input.value = '';
+
+    if (result && result._networkError) { showToast('⚠️', 'Could not reach server. Try again.', false); return; }
+    if (result && result.error) { showToast('⚠️', result.error, false); return; }
+    if (!result || !result.transactions || result.transactions.length === 0) {
+      showToast('⚠️', 'No transactions found — try a clearer screenshot.', false); return;
+    }
+    showReviewModal(result.transactions);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showReviewModal(transactions) {
+  _pendingImports = transactions.map(t => ({ ...t, included: true }));
+  document.getElementById('review-list').innerHTML = _pendingImports.map((t, i) => `
+    <div class="review-item" id="ri-${i}">
+      <input type="checkbox" class="review-check" checked onchange="toggleImport(${i},this.checked)">
+      <div class="review-cat-icon" id="ri-icon-${i}">${CAT_ICONS[t.category] || '📌'}</div>
+      <div class="review-info">
+        <div class="review-desc">${t.description}</div>
+        <div class="review-date">${fmtDate(t.date)}</div>
+      </div>
+      <select class="review-cat-select" onchange="changeImportCat(${i},this.value)">
+        ${['Housing','Food','Transport','Clothing','Entertainment','Family','Savings','Other'].map(c =>
+          `<option value="${c}"${c===t.category?' selected':''}>${CAT_ICONS[c]} ${c}</option>`).join('')}
+      </select>
+      <div class="review-amount">£${fmt(t.amount)}</div>
+    </div>`).join('');
+  document.getElementById('review-modal').style.display = 'flex';
+}
+
+function toggleImport(i, checked) {
+  _pendingImports[i].included = checked;
+  document.getElementById(`ri-${i}`).classList.toggle('excluded', !checked);
+}
+function changeImportCat(i, cat) {
+  _pendingImports[i].category = cat;
+  document.getElementById(`ri-icon-${i}`).textContent = CAT_ICONS[cat] || '📌';
+}
+function closeReviewModal() {
+  document.getElementById('review-modal').style.display = 'none';
+  _pendingImports = [];
+}
+
+async function confirmImport() {
+  const toAdd = _pendingImports.filter(t => t.included);
+  if (!toAdd.length) { showToast('⚠️', 'Nothing selected to add.', false); return; }
+
+  const btn = document.getElementById('confirm-import-btn');
+  btn.disabled = true; btn.textContent = `Adding ${toAdd.length} transactions...`;
+
+  let added = 0;
+  for (const t of toAdd) {
+    const r = await api.post('/api/expenses', {
+      date: t.date, amount: t.amount, description: t.description,
+      category: t.category, payment_method: 'Card', notes: 'Imported from bank statement'
+    });
+    if (!r.error) added++;
+  }
+
+  btn.disabled = false; btn.textContent = '✅ ADD TO MY BUDGET';
+  closeReviewModal();
+
+  const [data, expenses] = await Promise.all([api.get('/api/summary'), api.get('/api/expenses')]);
+  if (data) STATE.summary = data;
+  if (expenses) STATE.expenses = expenses;
+  renderBudgetBars();
+  renderAllExpenses();
+  showToast('✅', `${added} transaction${added !== 1 ? 's' : ''} added to your budget`);
 }
 
 async function deleteExpense(id) {

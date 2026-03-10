@@ -418,6 +418,75 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// ─── BANK STATEMENT PARSING ──────────────────────────────────────────────────
+
+app.post('/api/expenses/parse-statement', requireAuth, async (req, res) => {
+  try {
+    const { image, mimeType } = req.body;
+    if (!image || !mimeType) return res.status(400).json({ error: 'image and mimeType required' });
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(503).json({ error: 'Smart Import is not set up yet. Ask your advisor to add the ANTHROPIC_API_KEY to the app.' });
+    }
+
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const today = new Date().toISOString().split('T')[0];
+
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 2048,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: image } },
+          { type: 'text', text: `Analyse this bank statement screenshot from a professional footballer's bank app.
+
+Extract ALL spending transactions (money going OUT — debits, purchases, payments). Do NOT include income, deposits, or transfers in.
+
+Return ONLY a JSON array — no other text, no markdown. Format:
+[{"date":"YYYY-MM-DD","description":"merchant or description","amount":12.50,"category":"Food"}]
+
+Category rules (pick the best fit):
+- Housing: rent, mortgage, council tax, utilities, broadband, insurance, Sky, Virgin
+- Food: restaurants, Nando's, McDonald's, Uber Eats, Deliveroo, JustEat, Tesco, Sainsbury's, Lidl, Asda, any supermarket or takeaway
+- Transport: fuel, Uber, taxis, trains, parking, car wash, RAC, AA
+- Clothing: Nike, Adidas, JD Sports, ASOS, Zara, any clothes shop
+- Entertainment: Netflix, Spotify, Apple, PlayStation, Xbox, cinema, bars, clubs, gaming, holidays, hotels
+- Family: money sent to family, child-related, parental support
+- Savings: savings transfers, ISA contributions, investments
+- Other: everything else
+
+If date is unclear use today: ${today}
+If description is unclear use the merchant name shown.
+Return [] if no spending transactions are found.` }
+        ]
+      }]
+    });
+
+    const text = response.content.find(b => b.type === 'text')?.text || '';
+    let transactions = [];
+    try {
+      const match = text.match(/\[[\s\S]*\]/);
+      if (match) {
+        const VALID_CATS = ['Housing','Food','Transport','Clothing','Entertainment','Family','Savings','Other'];
+        transactions = JSON.parse(match[0])
+          .filter(t => t.description && t.amount > 0)
+          .map(t => ({
+            date: typeof t.date === 'string' && t.date.match(/^\d{4}-\d{2}-\d{2}$/) ? t.date : today,
+            description: String(t.description).trim().slice(0, 150),
+            amount: Math.round(parseFloat(t.amount) * 100) / 100,
+            category: VALID_CATS.includes(t.category) ? t.category : 'Other'
+          }));
+      }
+    } catch (e) { console.error('Failed to parse Claude response:', text.slice(0, 300)); }
+
+    res.json({ transactions });
+  } catch (e) {
+    console.error('parse-statement error:', e.message);
+    res.status(500).json({ error: 'Failed to read statement — try a clearer screenshot.' });
+  }
+});
+
 // ─── HEALTH / KEEPALIVE ──────────────────────────────────────────────────────
 
 app.get('/ping', (req, res) => res.json({ ok: true }));
