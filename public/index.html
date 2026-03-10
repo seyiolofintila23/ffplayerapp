@@ -503,13 +503,17 @@ const api = {
     return r.json();
   },
   async post(path, body) {
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body)
-    });
-    return r.json();
+    try {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      return r.json();
+    } catch (e) {
+      return { _networkError: true };
+    }
   },
   async put(path, body) {
     const r = await fetch(path, {
@@ -581,23 +585,41 @@ async function handleLogin() {
   if (!email || !password) { errEl.style.display = 'block'; errEl.textContent = '⚠ Please enter your email and password.'; return; }
 
   btn.disabled = true;
-  btn.textContent = 'Signing in...';
+  errEl.style.display = 'none';
 
-  const result = await api.post('/api/auth/login', { email, password });
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    btn.textContent = attempt > 1 ? `Retrying... (${attempt}/4)` : 'Signing in...';
+    const result = await api.post('/api/auth/login', { email, password });
 
-  btn.disabled = false;
-  btn.textContent = 'Sign In to Portal';
+    if (result && result._networkError) {
+      if (attempt < 4) {
+        errEl.style.display = 'block';
+        errEl.textContent = '⏳ Server is starting up — retrying in 10 seconds...';
+        await new Promise(r => setTimeout(r, 10000));
+        continue;
+      }
+      errEl.style.display = 'block';
+      errEl.textContent = '⚠ Server is taking too long — please refresh the page and try again.';
+      break;
+    }
 
-  if (!result || result.error) {
-    errEl.style.display = 'block';
-    errEl.textContent = '⚠ Incorrect credentials. Please try again or contact your advisor.';
+    if (!result || result.error) {
+      errEl.style.display = 'block';
+      errEl.textContent = '⚠ Incorrect credentials. Please try again or contact your advisor.';
+      break;
+    }
+
+    errEl.style.display = 'none';
+    STATE.user = result;
+    btn.disabled = false;
+    btn.textContent = 'Sign In to Portal';
+    showDashboard();
+    initDashboard();
     return;
   }
 
-  errEl.style.display = 'none';
-  STATE.user = result;
-  showDashboard();
-  initDashboard();
+  btn.disabled = false;
+  btn.textContent = 'Sign In to Portal';
 }
 
 async function handleLogout() {

@@ -282,6 +282,17 @@ async function seedAdminIfEmpty() {
   }
 }
 
+// ─── SEED DEFAULT PLAYERS ─────────────────────────────────────────────────────
+
+async function seedDefaultPlayers() {
+  const reece = await q.getUserByEmail('reece@flairfinancials.com');
+  if (!reece) {
+    const hash = bcrypt.hashSync('Welch2024', 12);
+    await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', 0, null);
+    console.log('Seeded player: Reece Welch (reece@flairfinancials.com / Welch2024)');
+  }
+}
+
 // ─── SESSION STORE ────────────────────────────────────────────────────────────
 
 function buildSessionStore(session) {
@@ -293,4 +304,4 @@ function buildSessionStore(session) {
   });
 }
 
-module.exports = { pool, q, getSummary, initSchema, seedAdminIfEmpty, buildSessionStore };
+module.exports = { pool, q, getSummary, initSchema, seedAdminIfEmpty, seedDefaultPlayers, buildSessionStore };

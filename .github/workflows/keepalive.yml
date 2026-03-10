@@ -2,12 +2,18 @@ name: Keep Alive
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # every 10 minutes
-  workflow_dispatch:         # allow manual trigger
+    - cron: '0 * * * *'   # runs once per hour; job pings every 5 min to cover the full hour
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 58
     steps:
-      - name: Ping app
-        run: curl -sf https://ffplayerapp.onrender.com/ping || true
+      - name: Keep app alive for the full hour (11 pings x 5 min)
+        run: |
+          for i in $(seq 1 11); do
+            echo "Ping $i/11 — $(date -u)"
+            curl -sf https://ffplayerapp.onrender.com/ping && echo " OK" || echo " (cold starting — app is waking up)"
+            [ $i -lt 11 ] && sleep 300
+          done

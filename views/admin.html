@@ -489,8 +489,12 @@ const api = {
     return r.json();
   },
   async post(path, body) {
-    const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) });
-    return r.json();
+    try {
+      const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) });
+      return r.json();
+    } catch (e) {
+      return { _networkError: true };
+    }
   },
   async put(path, body) {
     const r = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) });
@@ -525,17 +529,42 @@ async function handleAdminLogin() {
   const errEl = document.getElementById('admin-login-error');
   const btn = document.getElementById('admin-login-btn');
 
-  btn.disabled = true; btn.textContent = 'Signing in...';
-  const result = await api.post('/api/auth/login', { email, password });
-  btn.disabled = false; btn.textContent = 'Access Admin Panel';
-
-  if (!result || result.error || result.role !== 'admin') {
-    errEl.style.display = 'block'; return;
-  }
+  btn.disabled = true;
   errEl.style.display = 'none';
-  STATE.admin = result;
-  showAdmin();
-  initAdmin();
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    btn.textContent = attempt > 1 ? `Retrying... (${attempt}/4)` : 'Signing in...';
+    const result = await api.post('/api/auth/login', { email, password });
+
+    if (result && result._networkError) {
+      if (attempt < 4) {
+        errEl.style.display = 'block';
+        errEl.textContent = '⏳ Server is starting up — retrying in 10 seconds...';
+        await new Promise(r => setTimeout(r, 10000));
+        continue;
+      }
+      errEl.style.display = 'block';
+      errEl.textContent = '⚠ Server is taking too long — please refresh and try again.';
+      break;
+    }
+
+    if (!result || result.error || result.role !== 'admin') {
+      errEl.style.display = 'block';
+      errEl.textContent = '⚠ Invalid credentials or insufficient permissions.';
+      break;
+    }
+
+    errEl.style.display = 'none';
+    STATE.admin = result;
+    btn.disabled = false;
+    btn.textContent = 'Access Admin Panel';
+    showAdmin();
+    initAdmin();
+    return;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Access Admin Panel';
 }
 
 async function handleAdminLogout() {

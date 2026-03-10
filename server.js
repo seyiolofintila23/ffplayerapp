@@ -4,7 +4,7 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-const { pool, q, getSummary, initSchema, seedAdminIfEmpty, buildSessionStore } = require('./database');
+const { pool, q, getSummary, initSchema, seedAdminIfEmpty, seedDefaultPlayers, buildSessionStore } = require('./database');
 const { requireAuth, requireAdmin, attachUser } = require('./middleware');
 
 const app = express();
@@ -445,6 +445,7 @@ app.get('*', (req, res) => {
 async function start() {
   await initSchema();
   await seedAdminIfEmpty();
+  await seedDefaultPlayers();
   app.listen(PORT, () => {
     console.log(`⚽ FFplayerapp running → http://localhost:${PORT}`);
     console.log(`   Advisor panel → http://localhost:${PORT}/ffadmin`);
