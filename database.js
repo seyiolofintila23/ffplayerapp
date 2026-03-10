@@ -285,11 +285,15 @@ async function seedAdminIfEmpty() {
 // ─── SEED DEFAULT PLAYERS ─────────────────────────────────────────────────────
 
 async function seedDefaultPlayers() {
+  const REECE_WEEKLY = Math.round(27500 * 12 / 52 * 100) / 100; // £6,346.15
   const reece = await q.getUserByEmail('reece@flairfinancials.com');
   if (!reece) {
     const hash = bcrypt.hashSync('Welch2024', 12);
-    await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', 0, null);
+    await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', REECE_WEEKLY, null);
     console.log('Seeded player: Reece Welch (reece@flairfinancials.com / Welch2024)');
+  } else if (reece.weekly_wage_net === 0) {
+    await q.updateUser(reece.name, reece.email, reece.club, reece.position, REECE_WEEKLY, reece.born, reece.id);
+    console.log('Updated Reece Welch monthly income to £27,500 (weekly: £6,346.15)');
   }
 }
 

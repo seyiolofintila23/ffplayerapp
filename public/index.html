@@ -373,12 +373,20 @@
 
     <!-- OVERVIEW -->
     <div class="page-content active" id="page-overview">
+      <!-- Period toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;">
+        <div class="chart-period-toggle" style="background:rgba(255,255,255,0.06);padding:4px;border-radius:10px;">
+          <button class="period-btn active" id="tab-weekly" onclick="setOverviewPeriod('weekly')">📅 Weekly</button>
+          <button class="period-btn" id="tab-monthly" onclick="setOverviewPeriod('monthly')">📆 Monthly</button>
+        </div>
+        <button onclick="openIncomeEdit()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text-dim);padding:0.45rem 1rem;font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-dim)'">✏️ Edit Income</button>
+      </div>
       <div id="overview-hero"></div>
       <div id="overview-stats" class="stats-grid"></div>
       <div class="charts-row">
         <div class="chart-card">
           <div class="chart-card-header">
-            <div class="chart-card-title">Weekly Spending vs Budget</div>
+            <div class="chart-card-title" id="bar-chart-title">Weekly Spending vs Budget</div>
           </div>
           <canvas id="bar-chart" height="220"></canvas>
         </div>
@@ -522,6 +530,29 @@
         <div id="review-list"></div>
         <div class="modal-footer">
           <button class="add-expense-btn" id="confirm-import-btn" onclick="confirmImport()">✅ ADD TO MY BUDGET</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INCOME EDIT MODAL ═══ -->
+    <div class="modal-overlay" id="income-modal" style="display:none;" onclick="if(event.target===this)closeIncomeModal()">
+      <div class="modal-box" style="max-width:420px;">
+        <div class="modal-header">
+          <div class="modal-title">✏️ Edit Your Income</div>
+          <button class="modal-close" onclick="closeIncomeModal()">✕</button>
+        </div>
+        <div style="padding:1.5rem;">
+          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Enter your monthly take-home pay and we'll calculate your weekly automatically.</p>
+          <div class="tracker-input-group">
+            <label class="tracker-label">💷 Monthly Net Income (£)</label>
+            <input type="number" class="tracker-input" id="income-monthly" placeholder="e.g. 27500" min="0" step="100" oninput="updateWeeklyCalc()" style="font-size:1.3rem;padding:1rem 1.1rem;" />
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.1rem;margin-bottom:1.5rem;text-align:center;">
+            <div style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Weekly Net (auto-calculated)</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;" id="income-weekly-calc">£0.00</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;">monthly ÷ 12 × 52</div>
+          </div>
+          <button class="add-expense-btn" id="save-income-btn" onclick="saveIncome()">💾 SAVE INCOME</button>
         </div>
       </div>
     </div>
@@ -781,14 +812,29 @@ function closeSidebar() {
 // ─────────────────────────────────────────
 // OVERVIEW
 // ─────────────────────────────────────────
-async function loadOverview() {
-  const data = await api.get('/api/summary');
-  if (!data) return;
-  STATE.summary = data;
+let _overviewPeriod = 'weekly';
 
+function setOverviewPeriod(period) {
+  _overviewPeriod = period;
+  document.getElementById('tab-weekly').classList.toggle('active', period === 'weekly');
+  document.getElementById('tab-monthly').classList.toggle('active', period === 'monthly');
+  if (STATE.summary) renderOverviewStats();
+}
+
+function renderOverviewStats() {
+  const data = STATE.summary;
+  if (!data) return;
   const u = data.player;
+  const period = _overviewPeriod;
+
+  const weeklyWage = u.weeklyWageNet;
+  const monthlyWage = weeklyWage * 52 / 12;
+  const monthlySpend = data.spendingByCategory.reduce((s, c) => s + c.monthlySpent, 0);
   const totalBudget = data.spendingByCategory.reduce((s, c) => s + c.weeklyLimit, 0);
   const budgetUsedPct = totalBudget > 0 ? Math.round((data.totalSpentThisWeek / totalBudget) * 100) : 0;
+
+  // Update chart title
+  document.getElementById('bar-chart-title').textContent = 'Weekly Spending vs Budget';
 
   // Hero
   document.getElementById('overview-hero').innerHTML = `
@@ -803,21 +849,40 @@ async function loadOverview() {
         </div>
       </div>
       <div class="hero-stats">
-        <div class="hero-stat"><div class="hero-stat-value">${fmtShort(u.weeklyWageNet)}</div><div class="hero-stat-label">Weekly Income</div></div>
+        ${period === 'weekly' ? `
+        <div class="hero-stat"><div class="hero-stat-value">${fmtShort(weeklyWage)}</div><div class="hero-stat-label">Weekly Income</div></div>
         <div class="hero-stat"><div class="hero-stat-value">${budgetUsedPct}%</div><div class="hero-stat-label">Budget Used</div></div>
         <div class="hero-stat"><div class="hero-stat-value">${fmtShort(data.remainingBudget)}</div><div class="hero-stat-label">Remaining</div></div>
+        ` : `
+        <div class="hero-stat"><div class="hero-stat-value">${fmtShort(monthlyWage)}</div><div class="hero-stat-label">Monthly Income</div></div>
+        <div class="hero-stat"><div class="hero-stat-value">${fmtShort(monthlySpend)}</div><div class="hero-stat-label">Spent This Month</div></div>
+        <div class="hero-stat"><div class="hero-stat-value">${fmtShort(monthlyWage - monthlySpend)}</div><div class="hero-stat-label">Monthly Remaining</div></div>
+        `}
       </div>
     </div>`;
 
   // Stat cards
-  const monthlyNet = u.weeklyWageNet * 4.33;
-  const monthlySpend = data.spendingByCategory.reduce((s, c) => s + c.monthlySpent, 0);
-  const monthlySavings = monthlyNet - monthlySpend;
-  document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-card-accent accent-blue"></div><span class="stat-card-icon">💰</span><div class="stat-card-value">${fmtShort(u.weeklyWageNet)}</div><div class="stat-card-label">Weekly Net Income</div></div>
-    <div class="stat-card"><div class="stat-card-accent accent-red"></div><span class="stat-card-icon">🛒</span><div class="stat-card-value">${fmtShort(data.totalSpentThisWeek)}</div><div class="stat-card-label">Spent This Week</div></div>
-    <div class="stat-card"><div class="stat-card-accent accent-green"></div><span class="stat-card-icon">📈</span><div class="stat-card-value">${fmtShort(data.remainingBudget)}</div><div class="stat-card-label">Remaining Budget</div></div>
-    <div class="stat-card"><div class="stat-card-accent accent-gold"></div><span class="stat-card-icon">🏦</span><div class="stat-card-value">${data.savings.length}</div><div class="stat-card-label">Active Goals</div></div>`;
+  if (period === 'weekly') {
+    document.getElementById('overview-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-card-accent accent-blue"></div><span class="stat-card-icon">💰</span><div class="stat-card-value">${fmtShort(weeklyWage)}</div><div class="stat-card-label">Weekly Net Income</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-red"></div><span class="stat-card-icon">🛒</span><div class="stat-card-value">${fmtShort(data.totalSpentThisWeek)}</div><div class="stat-card-label">Spent This Week</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-green"></div><span class="stat-card-icon">📈</span><div class="stat-card-value">${fmtShort(data.remainingBudget)}</div><div class="stat-card-label">Remaining Budget</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-gold"></div><span class="stat-card-icon">🏦</span><div class="stat-card-value">${data.savings.length}</div><div class="stat-card-label">Active Goals</div></div>`;
+  } else {
+    document.getElementById('overview-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-card-accent accent-blue"></div><span class="stat-card-icon">💰</span><div class="stat-card-value">${fmtShort(monthlyWage)}</div><div class="stat-card-label">Monthly Net Income</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-red"></div><span class="stat-card-icon">🛒</span><div class="stat-card-value">${fmtShort(monthlySpend)}</div><div class="stat-card-label">Spent This Month</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-green"></div><span class="stat-card-icon">📈</span><div class="stat-card-value">${fmtShort(monthlyWage - monthlySpend)}</div><div class="stat-card-label">Monthly Remaining</div></div>
+      <div class="stat-card"><div class="stat-card-accent accent-gold"></div><span class="stat-card-icon">🏦</span><div class="stat-card-value">${data.savings.length}</div><div class="stat-card-label">Active Goals</div></div>`;
+  }
+}
+
+async function loadOverview() {
+  const data = await api.get('/api/summary');
+  if (!data) return;
+  STATE.summary = data;
+
+  renderOverviewStats();
 
   // Charts
   destroyChart('bar'); destroyChart('donut');
@@ -857,6 +922,43 @@ async function loadOverview() {
         <td class="amount-neg">£${fmt(e.amount)}</td>
       </tr>`).join('');
   }
+}
+
+// ─── INCOME EDIT MODAL ────────────────────────────────────────────────────────
+function openIncomeEdit() {
+  const weekly = STATE.user ? STATE.user.weeklyWageNet : 0;
+  const monthly = Math.round(weekly * 52 / 12);
+  document.getElementById('income-monthly').value = monthly || '';
+  updateWeeklyCalc();
+  document.getElementById('income-modal').style.display = 'flex';
+}
+
+function closeIncomeModal() {
+  document.getElementById('income-modal').style.display = 'none';
+}
+
+function updateWeeklyCalc() {
+  const monthly = parseFloat(document.getElementById('income-monthly').value) || 0;
+  const weekly = monthly * 12 / 52;
+  document.getElementById('income-weekly-calc').textContent = fmtShort(weekly);
+}
+
+async function saveIncome() {
+  const monthly = parseFloat(document.getElementById('income-monthly').value);
+  if (isNaN(monthly) || monthly < 0) { showToast('⚠️', 'Enter a valid monthly income.', false); return; }
+
+  const btn = document.getElementById('save-income-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const result = await api.put('/api/me/profile', { monthly_income: monthly });
+  btn.disabled = false; btn.textContent = '💾 SAVE INCOME';
+
+  if (result.error) { showToast('⚠️', result.error, false); return; }
+
+  STATE.user.weeklyWageNet = result.weeklyWageNet;
+  closeIncomeModal();
+  await loadOverview();
+  showToast('✅', `Income updated — monthly: ${fmtShort(monthly)}`);
 }
 
 // ─────────────────────────────────────────

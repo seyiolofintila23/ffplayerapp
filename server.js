@@ -418,6 +418,22 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// ─── PLAYER PROFILE UPDATE ───────────────────────────────────────────────────
+
+app.put('/api/me/profile', requireAuth, async (req, res) => {
+  try {
+    const { monthly_income } = req.body;
+    if (monthly_income === undefined) return res.status(400).json({ error: 'monthly_income required' });
+    const monthly = parseFloat(monthly_income);
+    if (isNaN(monthly) || monthly < 0) return res.status(400).json({ error: 'Invalid amount' });
+    const weekly = Math.round(monthly * 12 / 52 * 100) / 100;
+    const user = await q.getUserById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    await q.updateUser(user.name, user.email, user.club, user.position, weekly, user.born, req.user.id);
+    res.json({ ok: true, weeklyWageNet: weekly });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
 // ─── BANK STATEMENT PARSING ──────────────────────────────────────────────────
 
 app.post('/api/expenses/parse-statement', requireAuth, async (req, res) => {
