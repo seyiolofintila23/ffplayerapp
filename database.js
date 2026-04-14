@@ -2,9 +2,14 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
+const dbUrl = new URL(process.env.DATABASE_URL.trim());
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  host:     dbUrl.hostname,
+  port:     parseInt(dbUrl.port) || 5432,
+  database: dbUrl.pathname.slice(1),
+  user:     dbUrl.username,
+  password: dbUrl.password,
+  ssl:      process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // ─── SCHEMA ───────────────────────────────────────────────────────────────────
@@ -19,7 +24,7 @@ async function initSchema() {
       name             TEXT    NOT NULL,
       club             TEXT,
       position         TEXT,
-      weekly_wage_net  REAL    DEFAULT 0,
+      monthly_wage_net REAL    DEFAULT 0,
       born             TEXT,
       created_at       TIMESTAMPTZ DEFAULT NOW()
     );
@@ -40,7 +45,7 @@ async function initSchema() {
       id           SERIAL PRIMARY KEY,
       user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       category     TEXT    NOT NULL,
-      weekly_limit REAL    NOT NULL DEFAULT 0,
+      monthly_limit REAL   NOT NULL DEFAULT 0,
       UNIQUE(user_id, category)
     );
 
@@ -59,12 +64,63 @@ async function initSchema() {
       user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       month         INTEGER NOT NULL,
       year          INTEGER NOT NULL,
-      gross_weekly  REAL    DEFAULT 0,
-      net_weekly    REAL    DEFAULT 0,
+      gross_monthly REAL    DEFAULT 0,
+      net_monthly   REAL    DEFAULT 0,
       agent_fee_pct REAL    DEFAULT 0,
       notes         TEXT    DEFAULT '',
       UNIQUE(user_id, month, year)
     );
+
+    CREATE TABLE IF NOT EXISTS onboarding_leads (
+      id                  SERIAL PRIMARY KEY,
+      created_at          TIMESTAMPTZ DEFAULT NOW(),
+      first_name          TEXT NOT NULL,
+      last_name           TEXT NOT NULL,
+      age                 INTEGER,
+      nationality         TEXT,
+      email               TEXT NOT NULL,
+      phone               TEXT,
+      club                TEXT,
+      position            TEXT,
+      league              TEXT,
+      weekly_wage         INTEGER DEFAULT 0,
+      contract_end        TEXT,
+      contract_type       TEXT,
+      extra_income        TEXT DEFAULT '',
+      has_advisor         TEXT,
+      spending_style      TEXT,
+      spending_categories TEXT DEFAULT '',
+      monthly_savings     INTEGER DEFAULT 0,
+      goals               TEXT DEFAULT '',
+      concerns            TEXT DEFAULT '',
+      priority_text       TEXT DEFAULT '',
+      heard_via           TEXT,
+      status              TEXT DEFAULT 'new'
+    );
+  `);
+
+  // ─── MIGRATIONS ──────────────────────────────────────────────────────────────
+  await pool.query(`
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='weekly_wage_net') THEN
+        ALTER TABLE users RENAME COLUMN weekly_wage_net TO monthly_wage_net;
+        UPDATE users SET monthly_wage_net = ROUND((monthly_wage_net * 52 / 12)::numeric, 2);
+      END IF;
+    END $$;
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='budgets' AND column_name='weekly_limit') THEN
+        ALTER TABLE budgets RENAME COLUMN weekly_limit TO monthly_limit;
+        UPDATE budgets SET monthly_limit = ROUND((monthly_limit * 52 / 12)::numeric, 2);
+      END IF;
+    END $$;
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='income_records' AND column_name='gross_weekly') THEN
+        ALTER TABLE income_records RENAME COLUMN gross_weekly TO gross_monthly;
+        ALTER TABLE income_records RENAME COLUMN net_weekly TO net_monthly;
+        UPDATE income_records SET gross_monthly = ROUND((gross_monthly * 52 / 12)::numeric, 2),
+                                  net_monthly   = ROUND((net_monthly   * 52 / 12)::numeric, 2);
+      END IF;
+    END $$;
   `);
 }
 
@@ -80,19 +136,19 @@ const q = {
   },
   async getAllPlayers() {
     return (await pool.query(
-      "SELECT id, email, name, club, position, weekly_wage_net, born, created_at FROM users WHERE role='player' ORDER BY name"
+      "SELECT id, email, name, club, position, monthly_wage_net, born, created_at FROM users WHERE role='player' ORDER BY name"
     )).rows;
   },
-  async createUser(email, password_hash, role, name, club, position, weekly_wage_net, born) {
+  async createUser(email, password_hash, role, name, club, position, monthly_wage_net, born) {
     return (await pool.query(
-      'INSERT INTO users (email, password_hash, role, name, club, position, weekly_wage_net, born) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-      [email, password_hash, role, name, club, position, weekly_wage_net, born]
+      'INSERT INTO users (email, password_hash, role, name, club, position, monthly_wage_net, born) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+      [email, password_hash, role, name, club, position, monthly_wage_net, born]
     )).rows[0];
   },
-  async updateUser(name, email, club, position, weekly_wage_net, born, id) {
+  async updateUser(name, email, club, position, monthly_wage_net, born, id) {
     await pool.query(
-      'UPDATE users SET name=$1, email=$2, club=$3, position=$4, weekly_wage_net=$5, born=$6 WHERE id=$7',
-      [name, email, club, position, weekly_wage_net, born, id]
+      'UPDATE users SET name=$1, email=$2, club=$3, position=$4, monthly_wage_net=$5, born=$6 WHERE id=$7',
+      [name, email, club, position, monthly_wage_net, born, id]
     );
   },
   async updatePassword(password_hash, id) {
@@ -130,10 +186,10 @@ const q = {
   async getBudgetsByUser(user_id) {
     return (await pool.query('SELECT * FROM budgets WHERE user_id=$1', [user_id])).rows;
   },
-  async upsertBudget(user_id, category, weekly_limit) {
+  async upsertBudget(user_id, category, monthly_limit) {
     await pool.query(
-      'INSERT INTO budgets (user_id, category, weekly_limit) VALUES ($1,$2,$3) ON CONFLICT (user_id, category) DO UPDATE SET weekly_limit=$3',
-      [user_id, category, weekly_limit]
+      'INSERT INTO budgets (user_id, category, monthly_limit) VALUES ($1,$2,$3) ON CONFLICT (user_id, category) DO UPDATE SET monthly_limit=$3',
+      [user_id, category, monthly_limit]
     );
   },
   async deleteBudgetsByUser(user_id) {
@@ -175,16 +231,43 @@ const q = {
     return (await pool.query('DELETE FROM savings_goals WHERE id=$1', [id])).rowCount;
   },
 
+  // Onboarding leads
+  async createLead(data) {
+    return (await pool.query(
+      `INSERT INTO onboarding_leads
+        (first_name,last_name,age,nationality,email,phone,club,position,league,
+         weekly_wage,contract_end,contract_type,extra_income,has_advisor,
+         spending_style,spending_categories,monthly_savings,goals,concerns,priority_text,heard_via)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+       RETURNING id`,
+      [data.first_name,data.last_name,data.age,data.nationality,data.email,data.phone,
+       data.club,data.position,data.league,data.weekly_wage,data.contract_end,data.contract_type,
+       data.extra_income,data.has_advisor,data.spending_style,data.spending_categories,
+       data.monthly_savings,data.goals,data.concerns,data.priority_text,data.heard_via]
+    )).rows[0];
+  },
+  async getAllLeads() {
+    return (await pool.query(
+      'SELECT * FROM onboarding_leads ORDER BY created_at DESC'
+    )).rows;
+  },
+  async updateLeadStatus(id, status) {
+    await pool.query('UPDATE onboarding_leads SET status=$1 WHERE id=$2', [status, id]);
+  },
+  async deleteLead(id) {
+    return (await pool.query('DELETE FROM onboarding_leads WHERE id=$1', [id])).rowCount;
+  },
+
   // Income records
   async getIncomeByUser(user_id) {
     return (await pool.query('SELECT * FROM income_records WHERE user_id=$1 ORDER BY year DESC, month DESC', [user_id])).rows;
   },
-  async upsertIncome(user_id, month, year, gross_weekly, net_weekly, agent_fee_pct, notes) {
+  async upsertIncome(user_id, month, year, gross_monthly, net_monthly, agent_fee_pct, notes) {
     await pool.query(
-      `INSERT INTO income_records (user_id, month, year, gross_weekly, net_weekly, agent_fee_pct, notes)
+      `INSERT INTO income_records (user_id, month, year, gross_monthly, net_monthly, agent_fee_pct, notes)
        VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (user_id, month, year) DO UPDATE SET gross_weekly=$4, net_weekly=$5, agent_fee_pct=$6, notes=$7`,
-      [user_id, month, year, gross_weekly, net_weekly, agent_fee_pct, notes]
+       ON CONFLICT (user_id, month, year) DO UPDATE SET gross_monthly=$4, net_monthly=$5, agent_fee_pct=$6, notes=$7`,
+      [user_id, month, year, gross_monthly, net_monthly, agent_fee_pct, notes]
     );
   },
 };
@@ -228,31 +311,37 @@ async function getSummary(userId) {
 
   const CATEGORIES = ['Housing', 'Food', 'Transport', 'Clothing', 'Entertainment', 'Family', 'Savings', 'Other'];
   const budgetMap = {};
-  budgets.forEach(b => { budgetMap[b.category] = b.weekly_limit; });
+  budgets.forEach(b => { budgetMap[b.category] = b.monthly_limit; });
   const spentMapWeek = {};
   weekCats.forEach(c => { spentMapWeek[c.category] = parseFloat(c.total); });
   const spentMapMonth = {};
   monthCats.forEach(c => { spentMapMonth[c.category] = parseFloat(c.total); });
 
+  const monthlyWageNet = user.monthly_wage_net;
+  const weeklyWageNet = Math.round(monthlyWageNet * 12 / 52 * 100) / 100;
+
   const spendingByCategory = CATEGORIES.map(cat => ({
     category: cat,
-    weeklyLimit: budgetMap[cat] || 0,
+    monthlyLimit: budgetMap[cat] || 0,
+    weeklyLimit: Math.round((budgetMap[cat] || 0) * 12 / 52 * 100) / 100,
     weeklySpent: spentMapWeek[cat] || 0,
     monthlySpent: spentMapMonth[cat] || 0,
   }));
 
   const totalSpentThisWeek = weekCats.reduce((s, c) => s + parseFloat(c.total), 0);
-  const totalBudget = budgets.reduce((s, b) => s + b.weekly_limit, 0);
+  const totalMonthlyBudget = budgets.reduce((s, b) => s + b.monthly_limit, 0);
+  const totalWeeklyBudget = Math.round(totalMonthlyBudget * 12 / 52 * 100) / 100;
 
   return {
     player: {
       id: user.id, name: user.name, club: user.club,
-      position: user.position, weeklyWageNet: user.weekly_wage_net, born: user.born,
+      position: user.position, monthlyWageNet, weeklyWageNet, born: user.born,
     },
-    weeklyWageNet: user.weekly_wage_net,
+    monthlyWageNet,
+    weeklyWageNet,
     totalSpentThisWeek,
-    totalBudget,
-    remainingBudget: user.weekly_wage_net - totalSpentThisWeek,
+    totalBudget: totalWeeklyBudget,
+    remainingBudget: weeklyWageNet - totalSpentThisWeek,
     spendingByCategory,
     savings,
     recentExpenses,
@@ -285,15 +374,15 @@ async function seedAdminIfEmpty() {
 // ─── SEED DEFAULT PLAYERS ─────────────────────────────────────────────────────
 
 async function seedDefaultPlayers() {
-  const REECE_WEEKLY = Math.round(27500 * 12 / 52 * 100) / 100; // £6,346.15
+  const REECE_MONTHLY = 27500;
   const reece = await q.getUserByEmail('reece@flairfinancials.com');
   if (!reece) {
     const hash = bcrypt.hashSync('Welch2024', 12);
-    await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', REECE_WEEKLY, null);
+    await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', REECE_MONTHLY, null);
     console.log('Seeded player: Reece Welch (reece@flairfinancials.com / Welch2024)');
-  } else if (reece.weekly_wage_net === 0) {
-    await q.updateUser(reece.name, reece.email, reece.club, reece.position, REECE_WEEKLY, reece.born, reece.id);
-    console.log('Updated Reece Welch monthly income to £27,500 (weekly: £6,346.15)');
+  } else if (reece.monthly_wage_net === 0) {
+    await q.updateUser(reece.name, reece.email, reece.club, reece.position, REECE_MONTHLY, reece.born, reece.id);
+    console.log('Updated Reece Welch monthly income to £27,500');
   }
 }
 
