@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const dbUrl = new URL(process.env.DATABASE_URL.trim());
+const dbUrl = new URL(process.env.DATABASE_URL.replace(/\s+/g, ''));
 const pool = new Pool({
   host:     dbUrl.hostname,
   port:     parseInt(dbUrl.port) || 5432,
