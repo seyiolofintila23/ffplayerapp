@@ -380,9 +380,16 @@ async function seedDefaultPlayers() {
     const hash = bcrypt.hashSync('Welch2024', 12);
     await q.createUser('reece@flairfinancials.com', hash, 'player', 'Reece Welch', 'Everton', 'Defender', REECE_MONTHLY, null);
     console.log('Seeded player: Reece Welch (reece@flairfinancials.com / Welch2024)');
-  } else if (reece.monthly_wage_net === 0) {
-    await q.updateUser(reece.name, reece.email, reece.club, reece.position, REECE_MONTHLY, reece.born, reece.id);
-    console.log('Updated Reece Welch monthly income to £27,500');
+  } else {
+    if (reece.monthly_wage_net === 0) {
+      await q.updateUser(reece.name, reece.email, reece.club, reece.position, REECE_MONTHLY, reece.born, reece.id);
+      console.log('Updated Reece Welch monthly income to £27,500');
+    }
+    if (!bcrypt.compareSync('Welch2024', reece.password_hash)) {
+      const hash = bcrypt.hashSync('Welch2024', 12);
+      await q.updatePassword(hash, reece.id);
+      console.log('Reset Reece Welch password to Welch2024');
+    }
   }
 }
 
