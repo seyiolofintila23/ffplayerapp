@@ -245,6 +245,7 @@
       <div class="nav-item active" onclick="switchView('players',this)"><span class="nav-icon">👥</span> Players</div>
       <div class="nav-item" onclick="switchView('add-player',this)"><span class="nav-icon">➕</span> Add Player</div>
       <div class="nav-item" onclick="switchView('overview',this)"><span class="nav-icon">📊</span> Overview</div>
+      <div class="nav-item" onclick="switchView('leads',this)"><span class="nav-icon">📋</span> Leads <span id="leads-badge" style="display:none;margin-left:auto;background:rgba(240,180,41,0.25);border:1px solid rgba(240,180,41,0.5);color:var(--gold);font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:10px;"></span></div>
     </nav>
     <div class="sidebar-footer">
       <div style="margin-bottom:4px;"><span id="admin-name-display" style="font-weight:600;color:var(--white);">Admin</span> <span class="badge-admin">ADMIN</span></div>
@@ -293,10 +294,10 @@
             <div class="field-group"><label class="field-label">Club</label><input type="text" class="field-input" id="new-club" placeholder="e.g. Everton FC" /></div>
             <div class="field-group"><label class="field-label">Position</label><input type="text" class="field-input" id="new-position" placeholder="e.g. Centre-Back" /></div>
           </div>
-          <div class="field-group"><label class="field-label">Weekly Net Wage (£)</label><input type="number" class="field-input" id="new-wage" placeholder="e.g. 4200" min="0" /></div>
+          <div class="field-group"><label class="field-label">Monthly Net Wage (£)</label><input type="number" class="field-input" id="new-wage" placeholder="e.g. 27500" min="0" /></div>
 
           <hr class="divider">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:1rem;">💰 Initial Weekly Budgets (£/week)</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1.5px;margin-bottom:1rem;">💰 Initial Monthly Budgets (£/month)</div>
           <div class="budget-grid" id="new-budget-grid"></div>
 
           <div class="form-actions">
@@ -315,14 +316,49 @@
       <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;">
         <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--glass-border);font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;">All Players Summary</div>
         <table>
-          <thead><tr><th>Player</th><th>Club</th><th>Weekly Wage</th><th>Monthly Spend</th><th>Goals</th><th>Action</th></tr></thead>
+          <thead><tr><th>Player</th><th>Club</th><th>Monthly Wage</th><th>Monthly Spend</th><th>Goals</th><th>Action</th></tr></thead>
           <tbody id="overview-table"></tbody>
         </table>
       </div>
     </div>
 
+    <!-- LEADS PAGE -->
+    <div class="page" id="view-leads">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Onboarding Leads</div>
+          <div style="font-size:.82rem;color:var(--text-dim);margin-top:2px;">Players who completed the onboarding form</div>
+        </div>
+        <a href="/onboard" target="_blank" class="btn btn-ghost" style="text-decoration:none;font-size:.82rem;">🔗 View Form</a>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:.6rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm lead-filter active" data-status="all" onclick="filterLeads('all',this)">All</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="new" onclick="filterLeads('new',this)">🟡 New</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="contacted" onclick="filterLeads('contacted',this)">🔵 Contacted</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="converted" onclick="filterLeads('converted',this)">🟢 Converted</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="closed" onclick="filterLeads('closed',this)">⚫ Closed</button>
+      </div>
+
+      <div id="leads-list"></div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /admin-page -->
+
+<!-- LEAD DETAIL PANEL -->
+<div class="panel-overlay" id="lead-overlay" onclick="closeLeadPanel()"></div>
+<div class="slide-panel" id="lead-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="lead-panel-name">Lead</div>
+      <div style="font-size:.78rem;color:var(--text-dim);" id="lead-panel-sub"></div>
+    </div>
+    <button class="panel-close" onclick="closeLeadPanel()">✕ Close</button>
+  </div>
+  <div class="panel-body" id="lead-panel-body"></div>
+</div>
 
 <!-- ═══ PLAYER SLIDE PANEL ═══ -->
 <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
@@ -355,7 +391,7 @@
         <div class="field-group"><label class="field-label">Position</label><input type="text" class="field-input" id="edit-position" /></div>
       </div>
       <div class="form-2col">
-        <div class="field-group"><label class="field-label">Weekly Net Wage (£)</label><input type="number" class="field-input" id="edit-wage" min="0" /></div>
+        <div class="field-group"><label class="field-label">Monthly Net Wage (£)</label><input type="number" class="field-input" id="edit-wage" min="0" /></div>
         <div class="field-group"><label class="field-label">Date of Birth</label><input type="date" class="field-input" id="edit-born" /></div>
       </div>
       <div class="form-actions">
@@ -366,7 +402,7 @@
 
     <!-- BUDGET -->
     <div class="panel-section" id="panel-budget">
-      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Set weekly spending limits for each category. Players see their progress in real time.</div>
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Set monthly spending limits for each category. Players see their progress in real time.</div>
       <div class="budget-grid" id="edit-budget-grid"></div>
       <div class="form-actions">
         <button class="btn btn-blue" onclick="saveBudget()">💾 Save Budget Limits</button>
@@ -390,8 +426,8 @@
           <div class="field-group"><label class="field-label">Year</label><input type="number" class="field-input" id="inc-year" value="2026" min="2020" max="2035" /></div>
         </div>
         <div class="form-2col">
-          <div class="field-group"><label class="field-label">Gross Weekly (£)</label><input type="number" class="field-input" id="inc-gross" placeholder="0.00" min="0" /></div>
-          <div class="field-group"><label class="field-label">Net Weekly (£)</label><input type="number" class="field-input" id="inc-net" placeholder="0.00" min="0" /></div>
+          <div class="field-group"><label class="field-label">Gross Monthly (£)</label><input type="number" class="field-input" id="inc-gross" placeholder="0.00" min="0" /></div>
+          <div class="field-group"><label class="field-label">Net Monthly (£)</label><input type="number" class="field-input" id="inc-net" placeholder="0.00" min="0" /></div>
         </div>
         <div class="form-2col">
           <div class="field-group"><label class="field-label">Agent Fee %</label><input type="number" class="field-input" id="inc-agent" placeholder="10" min="0" max="100" /></div>
@@ -400,7 +436,7 @@
         <button class="btn btn-blue" onclick="saveIncome()">💾 Save Record</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>Month</th><th>Year</th><th>Gross/wk</th><th>Net/wk</th><th>Agent %</th></tr></thead>
+        <table><thead><tr><th>Month</th><th>Year</th><th>Gross/mo</th><th>Net/mo</th><th>Agent %</th></tr></thead>
         <tbody id="income-table"></tbody></table>
       </div>
     </div>
@@ -593,6 +629,10 @@ function initAdmin() {
   document.getElementById('admin-name-display').textContent = STATE.admin.name;
   buildBudgetGrid('new-budget-grid');
   loadPlayers();
+  // Pre-fetch leads count for badge
+  api.get('/api/admin/leads').then(leads => {
+    if (leads) { LEADS_ALL = leads; updateLeadsBadge(); }
+  });
 }
 
 // ─────────────────────────────────────────
@@ -603,9 +643,10 @@ function switchView(view, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('view-' + view).classList.add('active');
   if (el) el.classList.add('active');
-  const titles = { players:'Players', 'add-player':'Add New Player', overview:'Overview' };
+  const titles = { players:'Players', 'add-player':'Add New Player', overview:'Overview', leads:'Onboarding Leads' };
   document.getElementById('admin-page-title').textContent = titles[view] || view;
   if (view === 'overview') loadOverview();
+  if (view === 'leads') loadLeads();
   closeSidebar();
 }
 
@@ -641,7 +682,7 @@ function renderPlayersGrid(players) {
         <div class="player-card-name">${p.name}</div>
         <div class="player-card-sub">${p.club || 'No club'} · ${p.position || 'No position'}</div>
         <div class="player-card-stats">
-          <span class="player-stat-badge">${fmtShort(p.weekly_wage_net)}/wk</span>
+          <span class="player-stat-badge">${fmtShort(p.monthly_wage_net)}/mo</span>
           ${p.monthlySpend > 0 ? `<span class="player-stat-badge" style="background:rgba(229,62,62,0.15);border-color:rgba(229,62,62,0.3);color:#FC8181;">£${fmt(p.monthlySpend)} this month</span>` : ''}
         </div>
       </div>
@@ -676,10 +717,10 @@ async function createPlayer() {
 
   const budgets = CATEGORIES.map(cat => {
     const val = document.querySelector(`#new-budget-grid input[data-cat="${cat}"]`)?.value;
-    return { category: cat, weekly_limit: parseFloat(val) || 0 };
-  }).filter(b => b.weekly_limit > 0);
+    return { category: cat, monthly_limit: parseFloat(val) || 0 };
+  }).filter(b => b.monthly_limit > 0);
 
-  const result = await api.post('/api/admin/players', { name, email, password, born, club, position, weekly_wage_net: wage, budgets });
+  const result = await api.post('/api/admin/players', { name, email, password, born, club, position, monthly_wage_net: wage, budgets });
 
   if (result.error) { errEl.style.display='block'; errEl.textContent='⚠ ' + result.error; return; }
   errEl.style.display = 'none';
@@ -710,12 +751,12 @@ async function openPlayerPanel(playerId) {
   document.getElementById('edit-email').value = data.email || '';
   document.getElementById('edit-club').value = data.club || '';
   document.getElementById('edit-position').value = data.position || '';
-  document.getElementById('edit-wage').value = data.weeklyWageNet || '';
+  document.getElementById('edit-wage').value = data.monthlyWageNet || '';
   document.getElementById('edit-born').value = data.born || '';
 
   buildBudgetGrid('edit-budget-grid');
   const budgetMap = {};
-  data.budgets.forEach(b => { budgetMap[b.category] = b.weekly_limit; });
+  data.budgets.forEach(b => { budgetMap[b.category] = b.monthly_limit; });
   document.querySelectorAll('#edit-budget-grid input[data-cat]').forEach(inp => {
     inp.value = budgetMap[inp.dataset.cat] || '';
   });
@@ -769,11 +810,11 @@ async function saveProfile() {
   const email = document.getElementById('edit-email').value.trim();
   const club = document.getElementById('edit-club').value.trim();
   const position = document.getElementById('edit-position').value.trim();
-  const weekly_wage_net = parseFloat(document.getElementById('edit-wage').value) || 0;
+  const monthly_wage_net = parseFloat(document.getElementById('edit-wage').value) || 0;
   const born = document.getElementById('edit-born').value;
 
   if (!name || !email) { showToast('⚠️', 'Name and email required', false); return; }
-  const result = await api.put(`/api/admin/players/${id}`, { name, email, club, position, weekly_wage_net, born });
+  const result = await api.put(`/api/admin/players/${id}`, { name, email, club, position, monthly_wage_net, born });
   if (result.error) { showToast('⚠️', result.error, false); return; }
   document.getElementById('panel-player-name').textContent = name;
   showToast('✅', 'Profile saved');
@@ -798,7 +839,7 @@ async function saveBudget() {
   const id = STATE.currentPlayer;
   const budgets = CATEGORIES.map(cat => ({
     category: cat,
-    weekly_limit: parseFloat(document.querySelector(`#edit-budget-grid input[data-cat="${cat}"]`)?.value) || 0
+    monthly_limit: parseFloat(document.querySelector(`#edit-budget-grid input[data-cat="${cat}"]`)?.value) || 0
   }));
   const result = await api.put(`/api/admin/players/${id}/budget`, { budgets });
   if (result.error) { showToast('⚠️', result.error, false); return; }
@@ -813,8 +854,8 @@ function renderIncomeTable(income) {
   if (!income.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-dim);">No income records yet.</td></tr>`; return; }
   tbody.innerHTML = income.map(r => `<tr>
     <td>${MONTHS[r.month - 1]}</td><td>${r.year}</td>
-    <td class="amount-pos">${fmtShort(r.gross_weekly)}</td>
-    <td class="amount-pos">${fmtShort(r.net_weekly)}</td>
+    <td class="amount-pos">${fmtShort(r.gross_monthly)}</td>
+    <td class="amount-pos">${fmtShort(r.net_monthly)}</td>
     <td class="amount-neu">${r.agent_fee_pct}%</td>
   </tr>`).join('');
 }
@@ -823,12 +864,12 @@ async function saveIncome() {
   const id = STATE.currentPlayer;
   const month = document.getElementById('inc-month').value;
   const year = document.getElementById('inc-year').value;
-  const gross_weekly = parseFloat(document.getElementById('inc-gross').value) || 0;
-  const net_weekly = parseFloat(document.getElementById('inc-net').value) || 0;
+  const gross_monthly = parseFloat(document.getElementById('inc-gross').value) || 0;
+  const net_monthly = parseFloat(document.getElementById('inc-net').value) || 0;
   const agent_fee_pct = parseFloat(document.getElementById('inc-agent').value) || 0;
   const notes = document.getElementById('inc-notes').value;
 
-  const result = await api.post(`/api/admin/players/${id}/income`, { month, year, gross_weekly, net_weekly, agent_fee_pct, notes });
+  const result = await api.post(`/api/admin/players/${id}/income`, { month, year, gross_monthly, net_monthly, agent_fee_pct, notes });
   if (result.error) { showToast('⚠️', result.error, false); return; }
 
   // Refresh income list
@@ -981,11 +1022,165 @@ async function loadOverview() {
   tbody.innerHTML = players.map(p => `<tr>
     <td style="font-weight:600;">${p.name}</td>
     <td style="color:var(--text-dim);">${p.club || '—'}</td>
-    <td class="amount-pos">${fmtShort(p.weekly_wage_net)}/wk</td>
+    <td class="amount-pos">${fmtShort(p.monthly_wage_net)}/mo</td>
     <td class="amount-neg">${fmtShort(p.monthlySpend)}</td>
     <td>${p.goalCount} goal${p.goalCount !== 1 ? 's' : ''}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="openPlayerPanel(${p.id})">Manage →</button></td>
   </tr>`).join('');
+}
+
+// ─────────────────────────────────────────
+// LEADS
+// ─────────────────────────────────────────
+let LEADS_ALL = [];
+let LEADS_FILTER = 'all';
+
+async function loadLeads() {
+  const leads = await api.get('/api/admin/leads');
+  if (!leads) return;
+  LEADS_ALL = leads;
+  updateLeadsBadge();
+  renderLeads();
+}
+
+function updateLeadsBadge() {
+  const newCount = LEADS_ALL.filter(l => l.status === 'new').length;
+  const badge = document.getElementById('leads-badge');
+  if (newCount > 0) { badge.textContent = newCount; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+}
+
+function filterLeads(status, btn) {
+  LEADS_FILTER = status;
+  document.querySelectorAll('.lead-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeads();
+}
+
+function renderLeads() {
+  const list = document.getElementById('leads-list');
+  const filtered = LEADS_FILTER === 'all' ? LEADS_ALL : LEADS_ALL.filter(l => l.status === LEADS_FILTER);
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div style="font-size:3rem;">📋</div><p style="margin-top:1rem;">${LEADS_FILTER === 'all' ? 'No leads yet. Share the onboarding form to get started.' : 'No leads with this status.'}</p></div>`;
+    return;
+  }
+
+  const STATUS_COLORS = { new: '#F0B429', contacted: '#93C5FD', converted: '#68D391', closed: 'rgba(255,255,255,0.3)' };
+  const STATUS_LABELS = { new: '🟡 New', contacted: '🔵 Contacted', converted: '🟢 Converted', closed: '⚫ Closed' };
+
+  list.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Club / League</th><th>Wage</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${filtered.map(l => `
+            <tr>
+              <td>
+                <div style="font-weight:600;">${esc(l.first_name)} ${esc(l.last_name)}</div>
+                <div style="font-size:.75rem;color:var(--text-dim);">${esc(l.email)}</div>
+              </td>
+              <td style="color:var(--text-dim);">
+                <div>${esc(l.club||'—')}</div>
+                <div style="font-size:.75rem;">${esc(l.league||'—')}</div>
+              </td>
+              <td class="amount-neu">£${(l.weekly_wage||0).toLocaleString()}/wk</td>
+              <td style="color:var(--text-dim);font-size:.8rem;">${new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</td>
+              <td>
+                <select class="field-select" style="padding:4px 8px;font-size:.75rem;width:auto;" onchange="updateLeadStatus(${l.id},this.value)" data-lead-id="${l.id}">
+                  <option value="new"${l.status==='new'?' selected':''}>🟡 New</option>
+                  <option value="contacted"${l.status==='contacted'?' selected':''}>🔵 Contacted</option>
+                  <option value="converted"${l.status==='converted'?' selected':''}>🟢 Converted</option>
+                  <option value="closed"${l.status==='closed'?' selected':''}>⚫ Closed</option>
+                </select>
+              </td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-sm" onclick="openLeadPanel(${l.id})">View →</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteLead(${l.id})">Delete</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function updateLeadStatus(id, status) {
+  const result = await api.put(`/api/admin/leads/${id}/status`, { status });
+  if (result && result.ok) {
+    const lead = LEADS_ALL.find(l => l.id === id);
+    if (lead) lead.status = status;
+    updateLeadsBadge();
+    showToast('✅', 'Status updated');
+  }
+}
+
+async function deleteLead(id) {
+  if (!confirm('Delete this lead? This cannot be undone.')) return;
+  const result = await api.del(`/api/admin/leads/${id}`);
+  if (result && result.ok) {
+    LEADS_ALL = LEADS_ALL.filter(l => l.id !== id);
+    updateLeadsBadge();
+    renderLeads();
+    showToast('🗑', 'Lead deleted');
+  }
+}
+
+function openLeadPanel(id) {
+  const l = LEADS_ALL.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('lead-panel-name').textContent = `${l.first_name} ${l.last_name}`;
+  document.getElementById('lead-panel-sub').textContent = `${l.email}${l.phone ? ' · ' + l.phone : ''} · submitted ${new Date(l.created_at).toLocaleDateString('en-GB')}`;
+
+  const sec = (title, rows) => `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-bottom:.75rem;">
+      <div style="font-size:.66rem;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-dim);margin-bottom:.6rem;">${title}</div>
+      ${rows.filter(r=>r[1]).map(r=>`
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.83rem;border-top:1px solid rgba(255,255,255,0.04);">
+          <span style="color:var(--text-dim);">${r[0]}</span>
+          <span style="font-weight:600;text-align:right;max-width:60%;word-break:break-word;">${esc(String(r[1]))}</span>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('lead-panel-body').innerHTML =
+    sec('👤 Personal', [
+      ['Age', l.age], ['Nationality', l.nationality],
+      ['Club', l.club], ['Position', l.position], ['League', l.league],
+    ]) +
+    sec('💷 Income & Contract', [
+      ['Weekly Wage', l.weekly_wage ? `£${parseInt(l.weekly_wage).toLocaleString()}/week` : null],
+      ['Contract Ends', l.contract_end], ['Contract Type', l.contract_type],
+      ['Extra Income', l.extra_income], ['Has Advisor', l.has_advisor],
+    ]) +
+    sec('💳 Spending', [
+      ['Spending Style', l.spending_style],
+      ['Categories', l.spending_categories],
+      ['Monthly Savings', l.monthly_savings != null ? `£${parseInt(l.monthly_savings).toLocaleString()}/month` : null],
+    ]) +
+    sec('🎯 Goals & Concerns', [
+      ['Goals', l.goals], ['Concerns', l.concerns],
+      ['Priority', l.priority_text], ['Heard Via', l.heard_via],
+    ]) +
+    `<div style="margin-top:1rem;">
+      <label style="display:block;font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:.4rem;">Status</label>
+      <select class="field-select" onchange="updateLeadStatus(${l.id},this.value);document.getElementById('lead-panel-sub').textContent='';">
+        <option value="new"${l.status==='new'?' selected':''}>🟡 New</option>
+        <option value="contacted"${l.status==='contacted'?' selected':''}>🔵 Contacted</option>
+        <option value="converted"${l.status==='converted'?' selected':''}>🟢 Converted</option>
+        <option value="closed"${l.status==='closed'?' selected':''}>⚫ Closed</option>
+      </select>
+    </div>`;
+
+  document.getElementById('lead-panel').classList.add('open');
+  document.getElementById('lead-overlay').classList.add('show');
+}
+
+function closeLeadPanel() {
+  document.getElementById('lead-panel').classList.remove('open');
+  document.getElementById('lead-overlay').classList.remove('show');
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─────────────────────────────────────────

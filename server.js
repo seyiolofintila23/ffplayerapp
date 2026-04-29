@@ -51,7 +51,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       id: user.id, name: user.name, email: user.email, role: user.role,
-      club: user.club, position: user.position, weeklyWageNet: user.weekly_wage_net, born: user.born,
+      club: user.club, position: user.position, monthlyWageNet: user.monthly_wage_net, born: user.born,
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
@@ -66,7 +66,7 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({
       id: user.id, name: user.name, email: user.email, role: user.role,
-      club: user.club, position: user.position, weeklyWageNet: user.weekly_wage_net, born: user.born,
+      club: user.club, position: user.position, monthlyWageNet: user.monthly_wage_net, born: user.born,
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
@@ -162,6 +162,68 @@ app.delete('/api/savings/:id', requireAuth, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// ─── ONBOARDING ROUTES ────────────────────────────────────────────────────────
+
+app.post('/api/onboarding', async (req, res) => {
+  try {
+    const d = req.body;
+    if (!d.first_name || !d.last_name || !d.email) {
+      return res.status(400).json({ error: 'first_name, last_name, and email are required' });
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(d.email)) return res.status(400).json({ error: 'Invalid email address' });
+
+    const lead = await q.createLead({
+      first_name:          String(d.first_name).trim().slice(0, 80),
+      last_name:           String(d.last_name).trim().slice(0, 80),
+      age:                 parseInt(d.age) || null,
+      nationality:         String(d.nationality || '').trim().slice(0, 80),
+      email:               String(d.email).toLowerCase().trim().slice(0, 200),
+      phone:               String(d.phone || '').trim().slice(0, 40),
+      club:                String(d.club || '').trim().slice(0, 100),
+      position:            String(d.position || '').trim().slice(0, 60),
+      league:              String(d.league || '').trim().slice(0, 80),
+      weekly_wage:         parseInt(d.weekly_wage) || 0,
+      contract_end:        String(d.contract_end || '').trim().slice(0, 20),
+      contract_type:       String(d.contract_type || '').trim().slice(0, 40),
+      extra_income:        String(d.extra_income || '').trim().slice(0, 300),
+      has_advisor:         String(d.has_advisor || '').trim().slice(0, 100),
+      spending_style:      String(d.spending_style || '').trim().slice(0, 80),
+      spending_categories: String(d.spending_categories || '').trim().slice(0, 300),
+      monthly_savings:     parseInt(d.monthly_savings) || 0,
+      goals:               String(d.goals || '').trim().slice(0, 300),
+      concerns:            String(d.concerns || '').trim().slice(0, 300),
+      priority_text:       String(d.priority_text || '').trim().slice(0, 1000),
+      heard_via:           String(d.heard_via || '').trim().slice(0, 100),
+    });
+    res.status(201).json({ ok: true, id: lead.id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/admin/leads', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    res.json(await q.getAllLeads());
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.put('/api/admin/leads/:id/status', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const valid = ['new', 'contacted', 'converted', 'closed'];
+    if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    await q.updateLeadStatus(req.params.id, status);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.delete('/api/admin/leads/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const count = await q.deleteLead(req.params.id);
+    if (count === 0) return res.status(404).json({ error: 'Lead not found' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
 // ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 
 // Create advisor account
@@ -200,7 +262,7 @@ app.get('/api/admin/players', requireAuth, requireAdmin, async (req, res) => {
 // Create player
 app.post('/api/admin/players', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { email, password, name, club, position, weekly_wage_net, born } = req.body;
+    const { email, password, name, club, position, monthly_wage_net, born } = req.body;
     if (!email || !password || !name) return res.status(400).json({ error: 'email, password, and name required' });
 
     const existing = await q.getUserByEmail(email.toLowerCase().trim());
@@ -209,13 +271,13 @@ app.post('/api/admin/players', requireAuth, requireAdmin, async (req, res) => {
     const hash = bcrypt.hashSync(password, 12);
     const user = await q.createUser(
       email.toLowerCase().trim(), hash, 'player', name.trim(),
-      club || null, position || null, parseFloat(weekly_wage_net) || 0, born || null
+      club || null, position || null, parseFloat(monthly_wage_net) || 0, born || null
     );
 
     if (req.body.budgets && Array.isArray(req.body.budgets)) {
       await Promise.all(req.body.budgets
-        .filter(b => VALID_CATEGORIES.includes(b.category) && b.weekly_limit >= 0)
-        .map(b => q.upsertBudget(user.id, b.category, parseFloat(b.weekly_limit)))
+        .filter(b => VALID_CATEGORIES.includes(b.category) && b.monthly_limit >= 0)
+        .map(b => q.upsertBudget(user.id, b.category, parseFloat(b.monthly_limit)))
       );
     }
 
@@ -238,7 +300,7 @@ app.get('/api/admin/players/:id', requireAuth, requireAdmin, async (req, res) =>
 
     res.json({
       id: user.id, name: user.name, email: user.email, club: user.club,
-      position: user.position, weeklyWageNet: user.weekly_wage_net,
+      position: user.position, monthlyWageNet: user.monthly_wage_net,
       born: user.born, createdAt: user.created_at,
       budgets, savings, income, expenses,
     });
@@ -251,7 +313,7 @@ app.put('/api/admin/players/:id', requireAuth, requireAdmin, async (req, res) =>
     const user = await q.getUserById(req.params.id);
     if (!user || user.role === 'admin') return res.status(404).json({ error: 'Player not found' });
 
-    const { name, email, club, position, weekly_wage_net, born } = req.body;
+    const { name, email, club, position, monthly_wage_net, born } = req.body;
 
     if (email && email !== user.email) {
       const existing = await q.getUserByEmail(email.toLowerCase().trim());
@@ -263,7 +325,7 @@ app.put('/api/admin/players/:id', requireAuth, requireAdmin, async (req, res) =>
       (email || user.email).toLowerCase().trim(),
       club !== undefined ? club : user.club,
       position !== undefined ? position : user.position,
-      weekly_wage_net !== undefined ? parseFloat(weekly_wage_net) : user.weekly_wage_net,
+      monthly_wage_net !== undefined ? parseFloat(monthly_wage_net) : user.monthly_wage_net,
       born !== undefined ? born : user.born,
       req.params.id
     );
@@ -293,7 +355,7 @@ app.put('/api/admin/players/:id/budget', requireAuth, requireAdmin, async (req, 
     await q.deleteBudgetsByUser(req.params.id);
     await Promise.all(budgets
       .filter(b => VALID_CATEGORIES.includes(b.category))
-      .map(b => q.upsertBudget(req.params.id, b.category, parseFloat(b.weekly_limit) || 0))
+      .map(b => q.upsertBudget(req.params.id, b.category, parseFloat(b.monthly_limit) || 0))
     );
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
@@ -305,12 +367,12 @@ app.post('/api/admin/players/:id/income', requireAuth, requireAdmin, async (req,
     const user = await q.getUserById(req.params.id);
     if (!user) return res.status(404).json({ error: 'Player not found' });
 
-    const { month, year, gross_weekly, net_weekly, agent_fee_pct, notes } = req.body;
+    const { month, year, gross_monthly, net_monthly, agent_fee_pct, notes } = req.body;
     if (!month || !year) return res.status(400).json({ error: 'month and year required' });
 
     await q.upsertIncome(
       req.params.id, parseInt(month), parseInt(year),
-      parseFloat(gross_weekly) || 0, parseFloat(net_weekly) || 0,
+      parseFloat(gross_monthly) || 0, parseFloat(net_monthly) || 0,
       parseFloat(agent_fee_pct) || 0, notes || ''
     );
     res.json({ ok: true });
@@ -426,11 +488,10 @@ app.put('/api/me/profile', requireAuth, async (req, res) => {
     if (monthly_income === undefined) return res.status(400).json({ error: 'monthly_income required' });
     const monthly = parseFloat(monthly_income);
     if (isNaN(monthly) || monthly < 0) return res.status(400).json({ error: 'Invalid amount' });
-    const weekly = Math.round(monthly * 12 / 52 * 100) / 100;
     const user = await q.getUserById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    await q.updateUser(user.name, user.email, user.club, user.position, weekly, user.born, req.user.id);
-    res.json({ ok: true, weeklyWageNet: weekly });
+    await q.updateUser(user.name, user.email, user.club, user.position, monthly, user.born, req.user.id);
+    res.json({ ok: true, monthlyWageNet: monthly });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -511,6 +572,10 @@ app.get('/ping', (req, res) => res.json({ ok: true }));
 
 app.get('/ffadmin', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+});
+
+app.get('/onboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'onboarding.html'));
 });
 
 app.get('/admin.html', (req, res) => {

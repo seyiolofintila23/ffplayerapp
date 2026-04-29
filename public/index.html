@@ -426,7 +426,7 @@
           <div style="font-size:0.78rem;color:var(--text-dim);" id="spending-week-label"></div>
         </div>
         <table>
-          <thead><tr><th>Category</th><th>Weekly Spent</th><th>Weekly Budget</th><th>Monthly Spent</th><th>vs Budget</th></tr></thead>
+          <thead><tr><th>Category</th><th>Weekly Spent</th><th>Monthly Spent</th><th>Monthly Budget</th><th>vs Budget</th></tr></thead>
           <tbody id="spending-table-body"></tbody>
         </table>
       </div>
@@ -485,7 +485,7 @@
 
         <!-- RIGHT: Budget bars -->
         <div class="tracker-card">
-          <div class="tracker-title">📊 Budget This Week</div>
+          <div class="tracker-title">📊 Monthly Budget</div>
           <div id="budget-bars"></div>
         </div>
       </div>
@@ -542,7 +542,7 @@
           <button class="modal-close" onclick="closeIncomeModal()">✕</button>
         </div>
         <div style="padding:1.5rem;">
-          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Enter your monthly take-home pay and we'll calculate your weekly automatically.</p>
+          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.25rem;">Enter your monthly take-home pay to update your income.</p>
           <div class="tracker-input-group">
             <label class="tracker-label">💷 Monthly Net Income (£)</label>
             <input type="number" class="tracker-input" id="income-monthly" placeholder="e.g. 27500" min="0" step="100" oninput="updateWeeklyCalc()" style="font-size:1.3rem;padding:1rem 1.1rem;" />
@@ -550,7 +550,7 @@
           <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1.1rem;margin-bottom:1.5rem;text-align:center;">
             <div style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Weekly Net (auto-calculated)</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;" id="income-weekly-calc">£0.00</div>
-            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;">monthly ÷ 12 × 52</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;">monthly × 12 ÷ 52</div>
           </div>
           <button class="add-expense-btn" id="save-income-btn" onclick="saveIncome()">💾 SAVE INCOME</button>
         </div>
@@ -827,8 +827,8 @@ function renderOverviewStats() {
   const u = data.player;
   const period = _overviewPeriod;
 
-  const weeklyWage = u.weeklyWageNet;
-  const monthlyWage = weeklyWage * 52 / 12;
+  const monthlyWage = u.monthlyWageNet || 0;
+  const weeklyWage = data.weeklyWageNet || Math.round(monthlyWage * 12 / 52 * 100) / 100;
   const monthlySpend = data.spendingByCategory.reduce((s, c) => s + c.monthlySpent, 0);
   const totalBudget = data.spendingByCategory.reduce((s, c) => s + c.weeklyLimit, 0);
   const budgetUsedPct = totalBudget > 0 ? Math.round((data.totalSpentThisWeek / totalBudget) * 100) : 0;
@@ -926,8 +926,7 @@ async function loadOverview() {
 
 // ─── INCOME EDIT MODAL ────────────────────────────────────────────────────────
 function openIncomeEdit() {
-  const weekly = STATE.user ? STATE.user.weeklyWageNet : 0;
-  const monthly = Math.round(weekly * 52 / 12);
+  const monthly = STATE.user ? (STATE.user.monthlyWageNet || 0) : 0;
   document.getElementById('income-monthly').value = monthly || '';
   updateWeeklyCalc();
   document.getElementById('income-modal').style.display = 'flex';
@@ -955,7 +954,7 @@ async function saveIncome() {
 
   if (result.error) { showToast('⚠️', result.error, false); return; }
 
-  STATE.user.weeklyWageNet = result.weeklyWageNet;
+  STATE.user.monthlyWageNet = result.monthlyWageNet;
   closeIncomeModal();
   await loadOverview();
   showToast('✅', `Income updated — monthly: ${fmtShort(monthly)}`);
@@ -975,14 +974,14 @@ async function loadSpending() {
   // Table
   const tbody = document.getElementById('spending-table-body');
   tbody.innerHTML = spendingByCategory.map(c => {
-    const pct = c.weeklyLimit > 0 ? Math.round((c.weeklySpent / c.weeklyLimit) * 100) : 0;
+    const pct = c.monthlyLimit > 0 ? Math.round((c.monthlySpent / c.monthlyLimit) * 100) : 0;
     const cls = pct >= 100 ? 'change-down' : pct >= 80 ? '' : 'change-up';
     const barCls = pct >= 100 ? 'fill-danger' : pct >= 80 ? 'fill-warn' : 'fill-safe';
     return `<tr>
       <td><span class="cat-pill cat-${c.category}">${CAT_ICONS[c.category] || ''} ${c.category}</span></td>
       <td class="amount-neg">£${fmt(c.weeklySpent)}</td>
-      <td class="amount-neu">£${fmt(c.weeklyLimit)}</td>
       <td class="amount-neg">£${fmt(c.monthlySpent)}</td>
+      <td class="amount-neu">£${fmt(c.monthlyLimit)}</td>
       <td>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="progress-bar-wrap" style="width:60px;"><div class="budget-bar-fill ${barCls}" style="height:5px;border-radius:10px;width:${Math.min(pct,100)}%;"></div></div>
@@ -1034,10 +1033,13 @@ function selectMethod(method, btn) {
 }
 
 async function loadTracker() {
-  const [expenses, budget] = await Promise.all([api.get('/api/expenses'), api.get('/api/budget')]);
+  const requests = [api.get('/api/expenses'), api.get('/api/budget')];
+  if (!STATE.summary) requests.push(api.get('/api/summary'));
+  const [expenses, budget, summary] = await Promise.all(requests);
   if (!expenses || !budget) return;
   STATE.expenses = expenses;
   STATE.budget = budget;
+  if (summary) STATE.summary = summary;
   // Set today's date and default selections
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('exp-date').value = today;
@@ -1050,10 +1052,10 @@ async function loadTracker() {
 
 function renderBudgetBars() {
   const budgetMap = {};
-  STATE.budget.forEach(b => { budgetMap[b.category] = b.weekly_limit; });
+  STATE.budget.forEach(b => { budgetMap[b.category] = b.monthly_limit; });
   const summary = STATE.summary;
   const spentMap = {};
-  if (summary) summary.spendingByCategory.forEach(c => { spentMap[c.category] = c.weeklySpent; });
+  if (summary) summary.spendingByCategory.forEach(c => { spentMap[c.category] = c.monthlySpent; });
 
   const CATS = ['Housing','Food','Transport','Clothing','Entertainment','Family','Savings','Other'];
   const container = document.getElementById('budget-bars');
@@ -1251,7 +1253,7 @@ function renderSavings() {
   }
   list.innerHTML = goals.map(g => {
     const pct = g.target_amount > 0 ? Math.min(100, (g.current_amount / g.target_amount) * 100) : 0;
-    const barCls = pct >= 100 ? 'fill-safe' : pct >= 50 ? 'fill-warn' : 'fill-warn';
+    const barCls = pct >= 100 ? 'fill-safe' : pct >= 50 ? 'fill-warn' : 'fill-safe';
     return `<div class="goal-card">
       <div class="goal-icon-large">${g.icon}</div>
       <div class="goal-info">
