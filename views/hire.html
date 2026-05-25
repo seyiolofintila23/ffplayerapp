@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flair Financials — Social Media Hire Application</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0a1633;
+    --navy-deep: #050d20;
+    --blue: #1a6fff;
+    --blue-bright: #3b8aff;
+    --blue-soft: #e8f1ff;
+    --white: #ffffff;
+    --cream: #f5f7fb;
+    --grey: #8892a6;
+    --grey-line: #e3e8f0;
+    --green: #22c55e;
+    --gold: #ffd24a;
+    --red: #ef4444;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--body);
+    background: var(--cream);
+    color: var(--navy);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(26,111,255,0.06) 0, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(26,111,255,0.05) 0, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HEADER ─── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--navy);
+    color: var(--white);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid var(--blue);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 36px; height: 36px; background: var(--blue); border-radius: 8px;
+    display: grid; place-items: center;
+    font-family: var(--display); font-size: 22px; line-height: 1; letter-spacing: 0.02em;
+  }
+  .brand-name { font-family: var(--display); font-size: 22px; letter-spacing: 0.08em; }
+  .brand-name em { color: var(--blue-bright); font-style: normal; }
+  .topbar-meta {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--grey);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .topbar-meta .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.18);
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative; z-index: 1;
+    background: var(--navy); color: var(--white);
+    padding: 56px 32px 88px; overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(120deg, transparent 60%, rgba(26,111,255,0.18) 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 80px);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 980px; margin: 0 auto; position: relative; z-index: 2; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--blue-bright);
+    margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--blue-bright); display: inline-block; }
+  .hero h1 {
+    font-family: var(--display); font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.95; letter-spacing: 0.005em; margin-bottom: 22px; max-width: 18ch;
+  }
+  .hero h1 em { font-style: normal; color: var(--blue-bright); display: inline-block; position: relative; }
+  .hero h1 em::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 6px;
+    height: 8px; background: rgba(26,111,255,0.25); z-index: -1;
+  }
+  .hero-lede { font-size: 17px; line-height: 1.55; color: #c8d2e8; max-width: 56ch; margin-bottom: 32px; }
+  .hero-stats {
+    display: flex; flex-wrap: wrap; gap: 28px;
+    padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.12);
+  }
+  .stat .v { font-family: var(--display); font-size: 32px; letter-spacing: 0.02em; line-height: 1; color: var(--white); }
+  .stat .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--grey); margin-top: 6px; }
+
+  /* ─── PROGRESS RAIL ─── */
+  .progress-wrap {
+    position: sticky; top: 65px; z-index: 40;
+    background: var(--white); border-bottom: 1px solid var(--grey-line); padding: 18px 32px;
+  }
+  .progress-inner {
+    max-width: 980px; margin: 0 auto;
+    display: flex; align-items: center; gap: 14px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .progress-inner::-webkit-scrollbar { display: none; }
+  .pstep {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; border: 1px solid var(--grey-line); border-radius: 99px;
+    font-size: 12px; color: var(--grey); background: var(--cream); white-space: nowrap;
+    transition: all .25s ease; cursor: default;
+  }
+  .pstep .pnum {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--grey-line);
+    color: var(--white); display: grid; place-items: center;
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+  }
+  .pstep.active { border-color: var(--blue); background: var(--blue-soft); color: var(--navy); font-weight: 600; }
+  .pstep.active .pnum { background: var(--blue); }
+  .pstep.done { color: var(--green); border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08); }
+  .pstep.done .pnum { background: var(--green); }
+
+  /* ─── MAIN ─── */
+  main { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 48px 32px 120px; }
+
+  .step { display: none; animation: fadeUp .45s ease both; }
+  .step.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  .step-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .step-head h2 {
+    font-family: var(--display); font-size: clamp(36px, 4.5vw, 52px);
+    line-height: 0.95; letter-spacing: 0.01em; color: var(--navy);
+  }
+  .step-head h2 span { color: var(--blue); }
+  .step-head .step-num {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--grey);
+  }
+  .step-intro { font-size: 15.5px; line-height: 1.6; color: #46506a; margin-bottom: 36px; max-width: 68ch; }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--white); border: 1px solid var(--grey-line);
+    border-radius: 16px; padding: 30px; margin-bottom: 22px;
+    position: relative; transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  .card:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(26,111,255,0.10); }
+  .card.error { border-color: var(--red); }
+  .card-tag {
+    position: absolute; top: -10px; left: 22px;
+    background: var(--navy); color: var(--white);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 4px;
+  }
+  .card-tag.required { background: var(--blue); }
+  .card-tag.optional { background: var(--grey); }
+  .field-label { display: block; font-weight: 600; font-size: 16px; color: var(--navy); margin-bottom: 6px; }
+  .field-hint { font-size: 13.5px; color: var(--grey); margin-bottom: 14px; line-height: 1.5; }
+
+  input[type="text"], input[type="email"], input[type="url"], textarea {
+    width: 100%; font-family: var(--body); font-size: 15px; color: var(--navy);
+    background: var(--cream); border: 1.5px solid transparent; border-radius: 10px;
+    padding: 13px 16px; transition: all .2s ease; outline: none;
+  }
+  input:focus, textarea:focus { background: var(--white); border-color: var(--blue); }
+  textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
+
+  .char-count { text-align: right; font-family: var(--mono); font-size: 11px; color: var(--grey); margin-top: 6px; letter-spacing: 0.05em; }
+  .char-count.warn { color: var(--blue); }
+
+  /* ─── SOCIAL GRID ─── */
+  .socials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .social-input {
+    display: flex; align-items: center;
+    background: var(--cream); border: 1.5px solid transparent; border-radius: 10px;
+    transition: all .2s ease; overflow: hidden;
+  }
+  .social-input:focus-within { background: var(--white); border-color: var(--blue); }
+  .social-input .icon {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    color: var(--grey); flex-shrink: 0; border-right: 1px solid var(--grey-line);
+  }
+  .social-input input { background: transparent !important; border: none !important; padding: 12px 14px; width: 100%; font-size: 14px; }
+
+  /* ─── FILE DROP ─── */
+  .dual-input { display: grid; gap: 10px; }
+  .or-divider {
+    display: flex; align-items: center; gap: 12px; color: var(--grey);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.24em; margin: 4px 0;
+  }
+  .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--grey-line); }
+  .file-drop {
+    border: 1.5px dashed var(--grey-line); border-radius: 10px; padding: 22px;
+    text-align: center; cursor: pointer; transition: all .2s ease; background: var(--cream);
+  }
+  .file-drop:hover { border-color: var(--blue); background: var(--blue-soft); }
+  .file-drop.has-file { border-color: var(--green); border-style: solid; background: rgba(34,197,94,0.06); }
+  .file-drop svg { width: 28px; height: 28px; color: var(--blue); margin-bottom: 8px; }
+  .file-drop .ftext { font-size: 13.5px; color: var(--navy); font-weight: 500; }
+  .file-drop .fsub { font-size: 11.5px; color: var(--grey); margin-top: 3px; }
+  .file-drop input[type=file] { display: none; }
+
+  /* ─── BUTTONS ─── */
+  .actions {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--grey-line);
+    flex-wrap: wrap; gap: 16px;
+  }
+  .btn {
+    font-family: var(--display); font-size: 18px; letter-spacing: 0.08em;
+    padding: 14px 28px; border-radius: 10px; border: none; cursor: pointer;
+    transition: all .2s ease; display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-primary { background: var(--blue); color: var(--white); }
+  .btn-primary:hover { background: var(--navy); transform: translateY(-2px); box-shadow: 0 12px 32px -8px rgba(26,111,255,0.45); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost { background: transparent; color: var(--grey); padding: 14px 18px; }
+  .btn-ghost:hover { color: var(--navy); }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* ─── ERROR BANNER ─── */
+  .error-banner {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 22px;
+    color: var(--red); font-size: 14px; display: none;
+  }
+  .error-banner.show { display: block; }
+
+  /* ─── QUESTIONS ─── */
+  .q-card {
+    background: var(--white); border: 1px solid var(--grey-line);
+    border-radius: 16px; margin-bottom: 18px; overflow: hidden;
+    transition: border-color .25s ease;
+  }
+  .q-card:focus-within { border-color: var(--blue); }
+  .q-head {
+    padding: 22px 26px 16px; display: flex; gap: 16px; align-items: flex-start;
+    border-bottom: 1px solid var(--grey-line);
+  }
+  .q-num {
+    width: 36px; height: 36px; background: var(--navy); color: var(--white);
+    border-radius: 8px; display: grid; place-items: center;
+    font-family: var(--display); font-size: 18px; flex-shrink: 0;
+  }
+  .q-text { flex: 1; }
+  .q-text h3 { font-size: 17px; font-weight: 600; color: var(--navy); margin-bottom: 4px; line-height: 1.35; }
+  .q-text .q-meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue); }
+  .q-body { padding: 18px 26px 22px; }
+  .q-body textarea { background: var(--cream); min-height: 110px; }
+
+  /* ─── REVIEW ─── */
+  .review-grid { display: grid; gap: 14px; }
+  .review-row {
+    background: var(--white); border: 1px solid var(--grey-line); border-radius: 12px;
+    padding: 18px 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+  }
+  .review-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--grey); margin-bottom: 4px; }
+  .review-val { font-size: 14.5px; color: var(--navy); word-break: break-word; }
+  .review-val.empty { color: var(--grey); font-style: italic; }
+  .review-edit {
+    font-family: var(--mono); font-size: 11px; color: var(--blue);
+    text-decoration: none; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .review-edit:hover { text-decoration: underline; }
+
+  /* ─── SUCCESS ─── */
+  .success { text-align: center; padding: 50px 24px; }
+  .success-mark {
+    width: 88px; height: 88px; margin: 0 auto 24px;
+    background: var(--green); border-radius: 50%; display: grid; place-items: center;
+    color: white; box-shadow: 0 0 0 12px rgba(34,197,94,0.15);
+    animation: pop .5s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .success h2 { font-family: var(--display); font-size: clamp(40px, 6vw, 64px); line-height: 0.95; margin-bottom: 14px; }
+  .success p { font-size: 16px; color: #46506a; max-width: 52ch; margin: 0 auto 24px; line-height: 1.6; }
+  .ref-code {
+    display: inline-block; font-family: var(--mono); font-size: 13px; letter-spacing: 0.15em;
+    background: var(--navy); color: var(--blue-bright); padding: 10px 18px; border-radius: 6px;
+  }
+
+  /* ─── SPINNER ─── */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    border-top: 1px solid var(--grey-line); background: var(--white); padding: 26px 32px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--grey); text-align: center; position: relative; z-index: 1;
+  }
+  footer span { color: var(--blue); }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 12px 18px; }
+    .topbar-meta { display: none; }
+    .hero { padding: 40px 22px 64px; }
+    .progress-wrap { padding: 14px 18px; top: 60px; }
+    main { padding: 32px 18px 80px; }
+    .card { padding: 22px; }
+    .card-tag { left: 16px; }
+    .q-head, .q-body { padding-left: 18px; padding-right: 18px; }
+    .btn { font-size: 16px; padding: 12px 20px; }
+    .review-row { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">FF</div>
+    <div class="brand-name">Flair <em>Financials</em></div>
+  </div>
+  <div class="topbar-meta">
+    <span class="dot"></span>
+    <span>Applications Open · Stage 01</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Now Hiring · Social Media Lead</div>
+    <h1>Football meets <em>finance</em>. We need someone who can tell that story.</h1>
+    <p class="hero-lede">We're building the financial home of professional footballers — and we need a social media operator who lives at the intersection of the game and the money. This is Stage 1 of our hiring process: a portfolio submission and a few sharp questions to see how you think.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="v">~12 min</div><div class="l">Time to Complete</div></div>
+      <div class="stat"><div class="v">5 Stages</div><div class="l">Full Process</div></div>
+      <div class="stat"><div class="v">Remote</div><div class="l">+ UK Meetups</div></div>
+      <div class="stat"><div class="v">Stage 01</div><div class="l">You Are Here</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="pstep active" data-step="1"><span class="pnum">01</span><span>The Basics</span></div>
+    <div class="pstep" data-step="2"><span class="pnum">02</span><span>Portfolio</span></div>
+    <div class="pstep" data-step="3"><span class="pnum">03</span><span>Your Channels</span></div>
+    <div class="pstep" data-step="4"><span class="pnum">04</span><span>Intro Video</span></div>
+    <div class="pstep" data-step="5"><span class="pnum">05</span><span>Written Questions</span></div>
+    <div class="pstep" data-step="6"><span class="pnum">06</span><span>Review &amp; Submit</span></div>
+  </div>
+</div>
+
+<main>
+
+  <!-- STEP 1: BASICS -->
+  <section class="step active" data-step="1">
+    <div class="step-head">
+      <h2>Tell us <span>who you are</span></h2>
+      <div class="step-num">Step 01 / 06</div>
+    </div>
+    <p class="step-intro">No covering letters. No cliché openers. Just the essentials so we can get in touch and reference your work.</p>
+    <div id="err-1" class="error-banner"></div>
+
+    <div class="card" id="card-fullName">
+      <span class="card-tag required">Required</span>
+      <label class="field-label" for="fullName">Full name</label>
+      <input type="text" id="fullName" placeholder="e.g. Alex Morgan" autocomplete="name">
+    </div>
+
+    <div class="card" id="card-email">
+      <span class="card-tag required">Required</span>
+      <label class="field-label" for="email">Email address</label>
+      <p class="field-hint">We'll only use this to update you on your application.</p>
+      <input type="email" id="email" placeholder="you@email.com" autocomplete="email">
+    </div>
+
+    <div class="card">
+      <span class="card-tag optional">Optional</span>
+      <label class="field-label" for="location">Where you're based</label>
+      <p class="field-hint">City + country. We're remote-first but proximity to London / Manchester is a plus.</p>
+      <input type="text" id="location" placeholder="e.g. Manchester, UK">
+    </div>
+
+    <div class="actions">
+      <span></span>
+      <button class="btn btn-primary" onclick="next(1)">Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 2: PORTFOLIO -->
+  <section class="step" data-step="2">
+    <div class="step-head">
+      <h2>Show us <span>the work</span></h2>
+      <div class="step-num">Step 02 / 06</div>
+    </div>
+    <p class="step-intro">Drop a link to your portfolio, Notion, Drive folder, or attach a PDF. We want to see real examples — accounts you've run, content you've shipped, results you've moved.</p>
+    <div id="err-2" class="error-banner"></div>
+
+    <div class="card" id="card-portfolio">
+      <span class="card-tag required">Required</span>
+      <label class="field-label" for="portfolio">Portfolio / examples</label>
+      <p class="field-hint">A link is usually best — Notion, personal site, Drive folder, Dropbox.</p>
+      <div class="dual-input">
+        <input type="url" id="portfolio" placeholder="https://...">
+        <div class="or-divider">Or attach a file</div>
+        <label class="file-drop" id="portfolioDrop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div class="ftext" id="portfolioText">Drop a file or click to upload</div>
+          <div class="fsub">PDF, PNG, JPG · Up to 25MB</div>
+          <input type="file" id="portfolioFile" accept=".pdf,.png,.jpg,.jpeg">
+        </label>
+      </div>
+    </div>
+
+    <div class="card" id="card-cv">
+      <span class="card-tag required">Required</span>
+      <label class="field-label" for="cv">Creative CV or LinkedIn</label>
+      <p class="field-hint">Link only. We prefer a CV that shows personality — but a sharp LinkedIn works too.</p>
+      <input type="url" id="cv" placeholder="https://linkedin.com/in/...">
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+      <button class="btn btn-primary" onclick="next(2)">Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 3: SOCIAL HANDLES -->
+  <section class="step" data-step="3">
+    <div class="step-head">
+      <h2>Your <span>social handles</span></h2>
+      <div class="step-num">Step 03 / 06</div>
+    </div>
+    <p class="step-intro">Personal or work — wherever you actually post. We'll judge taste, voice, and consistency, not follower count.</p>
+    <div id="err-3" class="error-banner"></div>
+
+    <div class="card" id="card-socials">
+      <span class="card-tag required">Required</span>
+      <label class="field-label">Drop your handles below</label>
+      <p class="field-hint">At least one is required. Include the @ or the full URL — whatever's easier.</p>
+
+      <div class="socials-grid">
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+          </div>
+          <input type="text" placeholder="Instagram" data-social="instagram" id="s-instagram">
+        </div>
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.55a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.05z"/></svg>
+          </div>
+          <input type="text" placeholder="TikTok" data-social="tiktok" id="s-tiktok">
+        </div>
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </div>
+          <input type="text" placeholder="X / Twitter" data-social="x" id="s-x">
+        </div>
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+          </div>
+          <input type="text" placeholder="LinkedIn" data-social="linkedin" id="s-linkedin">
+        </div>
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          </div>
+          <input type="text" placeholder="YouTube" data-social="youtube" id="s-youtube">
+        </div>
+        <div class="social-input">
+          <div class="icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <input type="text" placeholder="Other (Threads, Substack...)" data-social="other" id="s-other">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo(2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+      <button class="btn btn-primary" onclick="next(3)">Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 4: INTRO VIDEO -->
+  <section class="step" data-step="4">
+    <div class="step-head">
+      <h2>60-second <span>intro video</span></h2>
+      <div class="step-num">Step 04 / 06</div>
+    </div>
+    <p class="step-intro">Record a Loom (or upload a clip) telling us who you are and why this role. No script, no overproduction. Just you — on camera — for under a minute. We're hiring someone who will be on social, so getting comfortable in front of a camera matters.</p>
+    <div id="err-4" class="error-banner"></div>
+
+    <div class="card" id="card-loom">
+      <span class="card-tag required">Required</span>
+      <label class="field-label" for="loom">Loom / video URL</label>
+      <p class="field-hint">Loom is easiest, but Drive, YouTube (unlisted), Vimeo, or Wistia all work. Make sure it's not set to private.</p>
+      <input type="url" id="loom" placeholder="https://loom.com/share/...">
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo(3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+      <button class="btn btn-primary" onclick="next(4)">Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 5: WRITTEN QUESTIONS -->
+  <section class="step" data-step="5">
+    <div class="step-head">
+      <h2>Three short <span>questions</span></h2>
+      <div class="step-num">Step 05 / 06</div>
+    </div>
+    <p class="step-intro">Be sharp, be specific, be yourself. 100–250 words each is the sweet spot — we'd rather you said something real than something polished.</p>
+    <div id="err-5" class="error-banner"></div>
+
+    <div class="q-card">
+      <div class="q-head">
+        <div class="q-num">01</div>
+        <div class="q-text">
+          <h3>Why does Flair Financials exist?</h3>
+          <p class="q-meta">Tests · Research &amp; understanding</p>
+        </div>
+      </div>
+      <div class="q-body">
+        <textarea id="q1" placeholder="In your own words. We're not after a brochure — we want to know whether you understand the gap we're filling."></textarea>
+        <div class="char-count"><span id="q1Count">0</span> characters</div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-head">
+        <div class="q-num">02</div>
+        <div class="q-text">
+          <h3>What's broken about football financial education?</h3>
+          <p class="q-meta">Tests · Mission alignment</p>
+        </div>
+      </div>
+      <div class="q-body">
+        <textarea id="q2" placeholder="Don't list the obvious. Tell us what most people miss."></textarea>
+        <div class="char-count"><span id="q2Count">0</span> characters</div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-head">
+        <div class="q-num">03</div>
+        <div class="q-text">
+          <h3>Which football content account has elite social strategy — and why?</h3>
+          <p class="q-meta">Tests · Content taste</p>
+        </div>
+      </div>
+      <div class="q-body">
+        <textarea id="q3" placeholder="One account. Be specific about what they do — format, voice, cadence, hooks. Anyone can name Athletic. Tell us what they actually do well."></textarea>
+        <div class="char-count"><span id="q3Count">0</span> characters</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo(4)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+      <button class="btn btn-primary" onclick="next(5)">Review
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 6: REVIEW -->
+  <section class="step" data-step="6">
+    <div class="step-head">
+      <h2>One last <span>look</span></h2>
+      <div class="step-num">Step 06 / 06</div>
+    </div>
+    <p class="step-intro">Check everything below before you hit submit. You can jump back to any step to edit.</p>
+    <div id="err-6" class="error-banner"></div>
+
+    <div class="review-grid" id="reviewGrid"></div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo(5)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>
+        Back
+      </button>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitApp()">Submit Application
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 7: SUCCESS -->
+  <section class="step" data-step="7">
+    <div class="success">
+      <div class="success-mark">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>Application received.</h2>
+      <p>Thanks for taking the time. Stage 1 submissions are reviewed within 7 working days — if we want to move you to Stage 2, you'll hear from <strong>careers@flairfinancials.com</strong>. Keep an eye on your spam folder.</p>
+      <div class="ref-code" id="refCode">REF · ——————</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Flair <span>Financials</span> · Football Meets Finance · Built in the UK
+</footer>
+
+<script>
+  let currentStep = 1;
+
+  function goTo(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
+    currentStep = n;
+    updateProgress();
+    if (n === 6) populateReview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateProgress() {
+    document.querySelectorAll('.pstep').forEach(p => {
+      const n = parseInt(p.dataset.step);
+      p.classList.remove('active', 'done');
+      if (n === currentStep) p.classList.add('active');
+      else if (n < currentStep) p.classList.add('done');
+    });
+  }
+
+  function showErr(step, msg) {
+    const el = document.getElementById('err-' + step);
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function clearErr(step) {
+    const el = document.getElementById('err-' + step);
+    if (el) { el.textContent = ''; el.classList.remove('show'); }
+  }
+
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function next(step) {
+    clearErr(step);
+
+    if (step === 1) {
+      if (!val('fullName')) { showErr(1, 'Please enter your full name.'); return; }
+      if (!val('email') || !val('email').includes('@')) { showErr(1, 'Please enter a valid email address.'); return; }
+    }
+    if (step === 2) {
+      const fileAttached = document.getElementById('portfolioFile').files.length > 0;
+      if (!val('portfolio') && !fileAttached) { showErr(2, 'Please provide a portfolio link or attach a file.'); return; }
+      if (!val('cv')) { showErr(2, 'Please provide your CV link or LinkedIn URL.'); return; }
+    }
+    if (step === 3) {
+      const socials = ['instagram','tiktok','x','linkedin','youtube','other'];
+      const any = socials.some(s => val('s-' + s));
+      if (!any) { showErr(3, 'Please add at least one social handle.'); return; }
+    }
+    if (step === 4) {
+      if (!val('loom')) { showErr(4, 'Please provide a link to your intro video.'); return; }
+    }
+    if (step === 5) {
+      if (!val('q1') || !val('q2') || !val('q3')) { showErr(5, 'Please answer all three questions.'); return; }
+    }
+
+    goTo(step + 1);
+  }
+
+  // ─── Character counts
+  ['q1','q2','q3'].forEach(id => {
+    const el = document.getElementById(id);
+    const counter = document.getElementById(id + 'Count');
+    el.addEventListener('input', () => {
+      counter.textContent = el.value.length;
+      counter.parentElement.classList.toggle('warn', el.value.length > 50);
+    });
+  });
+
+  // ─── File upload display
+  const fileInput = document.getElementById('portfolioFile');
+  const fileDrop = document.getElementById('portfolioDrop');
+  const fileText = document.getElementById('portfolioText');
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) {
+      fileText.textContent = fileInput.files[0].name;
+      fileDrop.classList.add('has-file');
+    }
+  });
+
+  // ─── Social handles summary
+  function socialVals() {
+    const keys = ['instagram','tiktok','x','linkedin','youtube','other'];
+    const out = [];
+    keys.forEach(k => {
+      const v = val('s-' + k);
+      if (v) out.push(k + ': ' + v);
+    });
+    return out.length ? out.join(' · ') : '';
+  }
+
+  // ─── Review
+  function populateReview() {
+    const file = fileInput.files[0] ? fileInput.files[0].name : '';
+    const rows = [
+      { step: 1, label: 'Full Name', val: val('fullName') },
+      { step: 1, label: 'Email', val: val('email') },
+      { step: 1, label: 'Location', val: val('location') },
+      { step: 2, label: 'Portfolio', val: val('portfolio') || file },
+      { step: 2, label: 'CV / LinkedIn', val: val('cv') },
+      { step: 3, label: 'Social Handles', val: socialVals() },
+      { step: 4, label: 'Intro Video', val: val('loom') },
+      { step: 5, label: 'Q1 · Why FF exists', val: val('q1') },
+      { step: 5, label: "Q2 · What's broken", val: val('q2') },
+      { step: 5, label: 'Q3 · Elite football account', val: val('q3') },
+    ];
+
+    const grid = document.getElementById('reviewGrid');
+    grid.innerHTML = '';
+    rows.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'review-row';
+      const displayVal = r.val
+        ? (r.val.length > 220 ? r.val.slice(0, 220) + '…' : r.val)
+        : null;
+      div.innerHTML = `
+        <div>
+          <div class="review-label">${r.label}</div>
+          <div class="review-val${displayVal ? '' : ' empty'}">${displayVal ? esc(displayVal) : '— not filled in —'}</div>
+        </div>
+        <a class="review-edit" onclick="goTo(${r.step})">Edit ↗</a>
+      `;
+      grid.appendChild(div);
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ─── Submit
+  async function submitApp() {
+    clearErr(6);
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+    const fd = new FormData();
+    fd.append('full_name', val('fullName'));
+    fd.append('email', val('email'));
+    fd.append('location', val('location'));
+    fd.append('portfolio_url', val('portfolio'));
+    fd.append('cv_url', val('cv'));
+    fd.append('social_instagram', val('s-instagram'));
+    fd.append('social_tiktok', val('s-tiktok'));
+    fd.append('social_x', val('s-x'));
+    fd.append('social_linkedin', val('s-linkedin'));
+    fd.append('social_youtube', val('s-youtube'));
+    fd.append('social_other', val('s-other'));
+    fd.append('intro_video_url', val('loom'));
+    fd.append('q1', val('q1'));
+    fd.append('q2', val('q2'));
+    fd.append('q3', val('q3'));
+    if (fileInput.files[0]) fd.append('portfolioFile', fileInput.files[0]);
+
+    try {
+      const res = await fetch('/api/applications/hire', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission failed.');
+      document.getElementById('refCode').textContent = 'REF · ' + data.ref_code;
+      goTo(7);
+    } catch (e) {
+      showErr(6, e.message || 'Something went wrong. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = `Submit Application <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    }
+  }
+</script>
+
+</body>
+</html>

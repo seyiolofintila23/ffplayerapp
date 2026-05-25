@@ -97,6 +97,30 @@ async function initSchema() {
       heard_via           TEXT,
       status              TEXT DEFAULT 'new'
     );
+
+    CREATE TABLE IF NOT EXISTS job_applications (
+      id               SERIAL PRIMARY KEY,
+      ref_code         TEXT UNIQUE NOT NULL,
+      full_name        TEXT NOT NULL,
+      email            TEXT NOT NULL,
+      location         TEXT,
+      portfolio_url    TEXT,
+      portfolio_file   TEXT,
+      cv_url           TEXT,
+      social_instagram TEXT,
+      social_tiktok    TEXT,
+      social_x         TEXT,
+      social_linkedin  TEXT,
+      social_youtube   TEXT,
+      social_other     TEXT,
+      intro_video_url  TEXT,
+      q1               TEXT,
+      q2               TEXT,
+      q3               TEXT,
+      status           TEXT DEFAULT 'pending',
+      notes            TEXT DEFAULT '',
+      submitted_at     TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   // ─── MIGRATIONS ──────────────────────────────────────────────────────────────
@@ -256,6 +280,38 @@ const q = {
   },
   async deleteLead(id) {
     return (await pool.query('DELETE FROM onboarding_leads WHERE id=$1', [id])).rowCount;
+  },
+
+  // Job applications
+  async createApplication(d) {
+    return (await pool.query(
+      `INSERT INTO job_applications
+        (ref_code,full_name,email,location,portfolio_url,portfolio_file,cv_url,
+         social_instagram,social_tiktok,social_x,social_linkedin,social_youtube,social_other,
+         intro_video_url,q1,q2,q3)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+       RETURNING id, ref_code, submitted_at`,
+      [d.ref_code,d.full_name,d.email,d.location,d.portfolio_url,d.portfolio_file,d.cv_url,
+       d.social_instagram,d.social_tiktok,d.social_x,d.social_linkedin,d.social_youtube,d.social_other,
+       d.intro_video_url,d.q1,d.q2,d.q3]
+    )).rows[0];
+  },
+  async getAllApplications() {
+    return (await pool.query(
+      'SELECT * FROM job_applications ORDER BY submitted_at DESC'
+    )).rows;
+  },
+  async getApplicationById(id) {
+    return (await pool.query('SELECT * FROM job_applications WHERE id=$1', [id])).rows[0];
+  },
+  async updateApplicationStatus(id, status, notes) {
+    await pool.query(
+      'UPDATE job_applications SET status=$1, notes=$2 WHERE id=$3',
+      [status, notes, id]
+    );
+  },
+  async deleteApplication(id) {
+    return (await pool.query('DELETE FROM job_applications WHERE id=$1', [id])).rowCount;
   },
 
   // Income records

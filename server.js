@@ -3,9 +3,19 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const multer = require('multer');
 
 const { pool, q, getSummary, initSchema, seedAdminIfEmpty, seedDefaultPlayers, buildSessionStore } = require('./database');
 const { requireAuth, requireAdmin, attachUser } = require('./middleware');
+
+const upload = multer({
+  dest: path.join(__dirname, 'public', 'uploads'),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    const ok = ['application/pdf', 'image/png', 'image/jpeg'].includes(file.mimetype);
+    cb(ok ? null : new Error('Only PDF, PNG, JPG allowed'), ok);
+  },
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -567,6 +577,72 @@ Return [] if no spending transactions are found.` }
 // ─── HEALTH / KEEPALIVE ──────────────────────────────────────────────────────
 
 app.get('/ping', (req, res) => res.json({ ok: true }));
+
+// ─── HIRE FORM ───────────────────────────────────────────────────────────────
+
+app.get('/hire', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'hire.html'));
+});
+
+app.post('/api/applications/hire', upload.single('portfolioFile'), async (req, res) => {
+  try {
+    const b = req.body;
+    if (!b.full_name || !b.email) {
+      return res.status(400).json({ error: 'Name and email are required.' });
+    }
+    const ref = 'FF-' + Math.random().toString(36).slice(2, 8).toUpperCase() + '-' + new Date().getFullYear();
+    const app = await q.createApplication({
+      ref_code:        ref,
+      full_name:       b.full_name?.trim(),
+      email:           b.email?.toLowerCase().trim(),
+      location:        b.location?.trim() || null,
+      portfolio_url:   b.portfolio_url?.trim() || null,
+      portfolio_file:  req.file ? req.file.filename : null,
+      cv_url:          b.cv_url?.trim() || null,
+      social_instagram: b.social_instagram?.trim() || null,
+      social_tiktok:   b.social_tiktok?.trim() || null,
+      social_x:        b.social_x?.trim() || null,
+      social_linkedin:  b.social_linkedin?.trim() || null,
+      social_youtube:  b.social_youtube?.trim() || null,
+      social_other:    b.social_other?.trim() || null,
+      intro_video_url: b.intro_video_url?.trim() || null,
+      q1:              b.q1?.trim() || null,
+      q2:              b.q2?.trim() || null,
+      q3:              b.q3?.trim() || null,
+    });
+    res.json({ ok: true, ref_code: app.ref_code, submitted_at: app.submitted_at });
+  } catch (e) {
+    console.error('hire application error:', e);
+    res.status(500).json({ error: 'Failed to save application. Please try again.' });
+  }
+});
+
+// ─── ADMIN — APPLICATIONS API ─────────────────────────────────────────────────
+
+app.get('/api/admin/applications', requireAdmin, async (req, res) => {
+  try {
+    const apps = await q.getAllApplications();
+    res.json(apps);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.patch('/api/admin/applications/:id', requireAdmin, async (req, res) => {
+  try {
+    const { status, notes } = req.body;
+    const valid = ['pending', 'reviewed', 'shortlisted', 'rejected'];
+    if (status && !valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    await q.updateApplicationStatus(req.params.id, status, notes ?? '');
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.delete('/api/admin/applications/:id', requireAdmin, async (req, res) => {
+  try {
+    const count = await q.deleteApplication(req.params.id);
+    if (!count) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
 
 // ─── ADMIN PANEL ROUTE ───────────────────────────────────────────────────────
 

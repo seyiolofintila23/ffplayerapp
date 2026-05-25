@@ -246,6 +246,7 @@
       <div class="nav-item" onclick="switchView('add-player',this)"><span class="nav-icon">➕</span> Add Player</div>
       <div class="nav-item" onclick="switchView('overview',this)"><span class="nav-icon">📊</span> Overview</div>
       <div class="nav-item" onclick="switchView('leads',this)"><span class="nav-icon">📋</span> Leads <span id="leads-badge" style="display:none;margin-left:auto;background:rgba(240,180,41,0.25);border:1px solid rgba(240,180,41,0.5);color:var(--gold);font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:10px;"></span></div>
+      <div class="nav-item" onclick="switchView('applications',this)"><span class="nav-icon">🎯</span> Applications <span id="apps-badge" style="display:none;margin-left:auto;background:rgba(26,111,255,0.25);border:1px solid rgba(26,111,255,0.5);color:#93C5FD;font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:10px;"></span></div>
     </nav>
     <div class="sidebar-footer">
       <div style="margin-bottom:4px;"><span id="admin-name-display" style="font-weight:600;color:var(--white);">Admin</span> <span class="badge-admin">ADMIN</span></div>
@@ -344,8 +345,49 @@
       <div id="leads-list"></div>
     </div>
 
+    <!-- APPLICATIONS PAGE -->
+    <div class="page" id="view-applications">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Hire Applications</div>
+          <div style="font-size:.82rem;color:var(--text-dim);margin-top:2px;">Social Media Lead — Stage 1 submissions</div>
+        </div>
+        <a href="/hire" target="_blank" class="btn btn-ghost" style="text-decoration:none;font-size:.82rem;">🔗 View Form</a>
+      </div>
+
+      <div class="stats-row" id="apps-stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+        <div class="stat-card"><div class="stat-card-accent accent-blue"></div><span class="stat-icon">📬</span><div class="stat-value" id="app-stat-total">—</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-card-accent" style="background:linear-gradient(90deg,#D69E2E,#F0B429);"></div><span class="stat-icon">⏳</span><div class="stat-value" id="app-stat-pending">—</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-card-accent accent-green"></div><span class="stat-icon">⭐</span><div class="stat-value" id="app-stat-shortlisted">—</div><div class="stat-label">Shortlisted</div></div>
+        <div class="stat-card"><div class="stat-card-accent" style="background:linear-gradient(90deg,#E53E3E,#FC8181);"></div><span class="stat-icon">❌</span><div class="stat-value" id="app-stat-rejected">—</div><div class="stat-label">Rejected</div></div>
+      </div>
+
+      <div style="display:flex;gap:.6rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm app-filter active" data-status="all" onclick="filterApps('all',this)">All</button>
+        <button class="btn btn-ghost btn-sm app-filter" data-status="pending" onclick="filterApps('pending',this)">⏳ Pending</button>
+        <button class="btn btn-ghost btn-sm app-filter" data-status="reviewed" onclick="filterApps('reviewed',this)">🔵 Reviewed</button>
+        <button class="btn btn-ghost btn-sm app-filter" data-status="shortlisted" onclick="filterApps('shortlisted',this)">⭐ Shortlisted</button>
+        <button class="btn btn-ghost btn-sm app-filter" data-status="rejected" onclick="filterApps('rejected',this)">❌ Rejected</button>
+      </div>
+
+      <div id="apps-list"></div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /admin-page -->
+
+<!-- APPLICATION DETAIL PANEL -->
+<div class="panel-overlay" id="app-overlay" onclick="closeAppPanel()"></div>
+<div class="slide-panel" id="app-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="app-panel-name">Applicant</div>
+      <div style="font-size:.78rem;color:var(--text-dim);" id="app-panel-sub"></div>
+    </div>
+    <button class="panel-close" onclick="closeAppPanel()">✕ Close</button>
+  </div>
+  <div class="panel-body" id="app-panel-body"></div>
+</div>
 
 <!-- LEAD DETAIL PANEL -->
 <div class="panel-overlay" id="lead-overlay" onclick="closeLeadPanel()"></div>
@@ -629,9 +671,11 @@ function initAdmin() {
   document.getElementById('admin-name-display').textContent = STATE.admin.name;
   buildBudgetGrid('new-budget-grid');
   loadPlayers();
-  // Pre-fetch leads count for badge
   api.get('/api/admin/leads').then(leads => {
     if (leads) { LEADS_ALL = leads; updateLeadsBadge(); }
+  });
+  api.get('/api/admin/applications').then(apps => {
+    if (apps) { APPS_ALL = apps; updateAppsBadge(); }
   });
 }
 
@@ -643,10 +687,11 @@ function switchView(view, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('view-' + view).classList.add('active');
   if (el) el.classList.add('active');
-  const titles = { players:'Players', 'add-player':'Add New Player', overview:'Overview', leads:'Onboarding Leads' };
+  const titles = { players:'Players', 'add-player':'Add New Player', overview:'Overview', leads:'Onboarding Leads', applications:'Hire Applications' };
   document.getElementById('admin-page-title').textContent = titles[view] || view;
   if (view === 'overview') loadOverview();
   if (view === 'leads') loadLeads();
+  if (view === 'applications') loadApps();
   closeSidebar();
 }
 
@@ -1192,6 +1237,193 @@ function showToast(icon, msg, success = true) {
   document.getElementById('toast-msg').textContent = msg;
   t.className = 'toast ' + (success ? 'toast-success' : 'toast-error') + ' show';
   setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ─────────────────────────────────────────
+// HIRE APPLICATIONS
+// ─────────────────────────────────────────
+let APPS_ALL = [];
+let APPS_FILTER = 'all';
+
+async function loadApps() {
+  const apps = await api.get('/api/admin/applications');
+  if (!apps) return;
+  APPS_ALL = apps;
+  updateAppsBadge();
+  renderApps();
+}
+
+function updateAppsBadge() {
+  const pending = APPS_ALL.filter(a => a.status === 'pending').length;
+  const badge = document.getElementById('apps-badge');
+  if (badge) {
+    badge.textContent = pending;
+    badge.style.display = pending > 0 ? 'inline' : 'none';
+  }
+  const t = document.getElementById('app-stat-total');
+  const p = document.getElementById('app-stat-pending');
+  const s = document.getElementById('app-stat-shortlisted');
+  const r = document.getElementById('app-stat-rejected');
+  if (t) t.textContent = APPS_ALL.length;
+  if (p) p.textContent = APPS_ALL.filter(a => a.status === 'pending').length;
+  if (s) s.textContent = APPS_ALL.filter(a => a.status === 'shortlisted').length;
+  if (r) r.textContent = APPS_ALL.filter(a => a.status === 'rejected').length;
+}
+
+function filterApps(status, el) {
+  APPS_FILTER = status;
+  document.querySelectorAll('.app-filter').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderApps();
+}
+
+function renderApps() {
+  const list = document.getElementById('apps-list');
+  if (!list) return;
+  const filtered = APPS_FILTER === 'all' ? APPS_ALL : APPS_ALL.filter(a => a.status === APPS_FILTER);
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--text-dim);font-size:.9rem;">No applications found.</div>`;
+    return;
+  }
+  const statusBadge = s => {
+    const map = { pending:'⏳ Pending', reviewed:'🔵 Reviewed', shortlisted:'⭐ Shortlisted', rejected:'❌ Rejected' };
+    const col = { pending:'rgba(240,180,41,0.25)', reviewed:'rgba(26,109,255,0.2)', shortlisted:'rgba(56,161,105,0.2)', rejected:'rgba(229,62,62,0.2)' };
+    const tcol = { pending:'var(--gold)', reviewed:'#93C5FD', shortlisted:'#68D391', rejected:'#FC8181' };
+    return `<span style="font-size:.7rem;padding:3px 10px;border-radius:20px;background:${col[s]||col.pending};color:${tcol[s]||tcol.pending};font-weight:700;">${map[s]||s}</span>`;
+  };
+  list.innerHTML = filtered.map(a => `
+    <div onclick="openAppPanel(${a.id})" style="background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:1.1rem 1.4rem;margin-bottom:.75rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between;gap:1rem;" onmouseover="this.style.borderColor='rgba(26,109,255,0.5)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--navy-mid));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;flex-shrink:0;">${esc(a.full_name.slice(0,2).toUpperCase())}</div>
+        <div>
+          <div style="font-weight:600;font-size:.95rem;">${esc(a.full_name)}</div>
+          <div style="font-size:.78rem;color:var(--text-dim);margin-top:2px;">${esc(a.email)}${a.location ? ' · ' + esc(a.location) : ''}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-shrink:0;">
+        ${statusBadge(a.status)}
+        <span style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-dim);">${new Date(a.submitted_at).toLocaleDateString('en-GB')}</span>
+        <span style="color:var(--text-dim);">›</span>
+      </div>
+    </div>`).join('');
+}
+
+function openAppPanel(id) {
+  const a = APPS_ALL.find(x => x.id === id);
+  if (!a) return;
+
+  document.getElementById('app-panel-name').textContent = a.full_name;
+  document.getElementById('app-panel-sub').textContent = `${a.email} · REF: ${a.ref_code} · ${new Date(a.submitted_at).toLocaleDateString('en-GB')}`;
+
+  const link = (url, label) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener" style="color:#93C5FD;word-break:break-all;">${esc(url)}</a>` : `<span style="color:var(--text-dim);font-style:italic;">—</span>`;
+
+  const socials = ['instagram','tiktok','x','linkedin','youtube','other']
+    .filter(k => a['social_' + k])
+    .map(k => `<span style="font-size:.75rem;padding:3px 10px;border-radius:20px;background:rgba(26,109,255,0.15);color:#93C5FD;">${k}: ${esc(a['social_' + k])}</span>`)
+    .join(' ');
+
+  const row = (label, val) => val ? `
+    <div style="margin-bottom:.9rem;">
+      <div style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:.3rem;">${label}</div>
+      <div style="font-size:.9rem;line-height:1.55;">${val}</div>
+    </div>` : '';
+
+  const section = (title, content) => `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.1rem 1.3rem;margin-bottom:1rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1.5px;margin-bottom:.9rem;color:var(--white);">${title}</div>
+      ${content}
+    </div>`;
+
+  document.getElementById('app-panel-body').innerHTML =
+    section('📋 Basics',
+      row('Location', a.location ? esc(a.location) : null) +
+      row('Portfolio', link(a.portfolio_url)) +
+      (a.portfolio_file ? row('Attached File', `<a href="/uploads/${esc(a.portfolio_file)}" target="_blank" style="color:#93C5FD;">📎 Download</a>`) : '') +
+      row('CV / LinkedIn', link(a.cv_url))
+    ) +
+    (socials ? section('📱 Social Handles', `<div style="display:flex;flex-wrap:wrap;gap:.5rem;">${socials}</div>`) : '') +
+    section('🎥 Intro Video',
+      a.intro_video_url ? `<a href="${esc(a.intro_video_url)}" target="_blank" rel="noopener" style="color:#93C5FD;word-break:break-all;">${esc(a.intro_video_url)}</a>` : `<span style="color:var(--text-dim);font-style:italic;">Not provided</span>`
+    ) +
+    section('📝 Written Questions',
+      row('Q1 — Why does Flair Financials exist?', a.q1 ? esc(a.q1) : null) +
+      row("Q2 — What's broken about football financial education?", a.q2 ? esc(a.q2) : null) +
+      row('Q3 — Which football account has elite social strategy?', a.q3 ? esc(a.q3) : null)
+    ) +
+    `<div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:1.1rem 1.3rem;margin-bottom:1rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1.5px;margin-bottom:.75rem;">⚙️ Status &amp; Notes</div>
+      <div class="field-group" style="margin-bottom:.75rem;">
+        <label class="field-label">Status</label>
+        <select class="field-select" id="app-status-select" onchange="updateAppStatus(${a.id})">
+          <option value="pending"${a.status==='pending'?' selected':''}>⏳ Pending</option>
+          <option value="reviewed"${a.status==='reviewed'?' selected':''}>🔵 Reviewed</option>
+          <option value="shortlisted"${a.status==='shortlisted'?' selected':''}>⭐ Shortlisted</option>
+          <option value="rejected"${a.status==='rejected'?' selected':''}>❌ Rejected</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Internal Notes</label>
+        <textarea class="field-input" id="app-notes-input" rows="3" placeholder="Add notes for your team..." style="resize:vertical;min-height:80px;">${esc(a.notes || '')}</textarea>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-top:.75rem;">
+        <button class="btn btn-blue btn-sm" onclick="saveAppNotes(${a.id})">💾 Save Notes</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteApp(${a.id})" style="margin-left:auto;">🗑 Delete</button>
+      </div>
+    </div>`;
+
+  document.getElementById('app-panel').classList.add('open');
+  document.getElementById('app-overlay').classList.add('show');
+}
+
+function closeAppPanel() {
+  document.getElementById('app-panel').classList.remove('open');
+  document.getElementById('app-overlay').classList.remove('show');
+}
+
+async function updateAppStatus(id) {
+  const status = document.getElementById('app-status-select').value;
+  const notes = document.getElementById('app-notes-input')?.value || '';
+  const r = await fetch(`/api/admin/applications/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ status, notes })
+  });
+  if (r.ok) {
+    const a = APPS_ALL.find(x => x.id === id);
+    if (a) { a.status = status; a.notes = notes; }
+    updateAppsBadge();
+    renderApps();
+    showToast('✅', 'Status updated');
+  }
+}
+
+async function saveAppNotes(id) {
+  const notes = document.getElementById('app-notes-input')?.value || '';
+  const status = document.getElementById('app-status-select')?.value || 'pending';
+  const r = await fetch(`/api/admin/applications/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ status, notes })
+  });
+  if (r.ok) {
+    const a = APPS_ALL.find(x => x.id === id);
+    if (a) { a.notes = notes; a.status = status; }
+    showToast('✅', 'Notes saved');
+  }
+}
+
+async function deleteApp(id) {
+  if (!confirm('Delete this application? This cannot be undone.')) return;
+  const r = await fetch(`/api/admin/applications/${id}`, { method:'DELETE', credentials:'include' });
+  if (r.ok) {
+    APPS_ALL = APPS_ALL.filter(a => a.id !== id);
+    updateAppsBadge();
+    renderApps();
+    closeAppPanel();
+    showToast('🗑', 'Application deleted');
+  }
 }
 
 // ─────────────────────────────────────────
